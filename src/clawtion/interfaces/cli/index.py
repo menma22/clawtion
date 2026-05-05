@@ -1,4 +1,4 @@
-"""clawtion index commands -- indexing and queue management."""
+﻿"""clawtion index commands -- indexing and queue management."""
 
 from __future__ import annotations
 
@@ -95,7 +95,7 @@ async def index_cmd(path: str | None, batch: bool, force: bool) -> None:
             count = await indexing_service.index_folder(resolved, force=force)
             click.echo(click.style(f"  {t('cli.indexing.complete', count=count, duration='')}", fg="green"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @index.command(name="now")
@@ -107,7 +107,8 @@ async def index_now() -> None:
         queue = services["queue"]
         indexing_service = services["indexing_service"]
 
-        pending = await queue.count_pending()
+        stats = await queue.get_stats()
+        pending = stats.get("pending", 0)
         if pending == 0:
             click.echo(f"  {t('cli.indexing.nothing_to_index')}")
             return
@@ -120,7 +121,7 @@ async def index_now() -> None:
 
         click.echo(click.style(f"  {t('cli.indexing.complete', count=processed, duration='')}", fg="green"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @index.command(name="reindex")
@@ -138,7 +139,7 @@ async def reindex() -> None:
 
         click.echo(click.style(f"  {t('cli.indexing.reindex_started')}", fg="green"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 # ---------------------------------------------------------------------------
@@ -160,10 +161,11 @@ async def queue_status() -> None:
     try:
         queue = services["queue"]
 
-        pending = await queue.count_pending()
-        processing = await queue.count_processing()
-        completed = await queue.count_completed()
-        failed = await queue.count_failed()
+        stats = await queue.get_stats()
+        pending = stats.get("pending", 0)
+        processing = stats.get("processing", 0)
+        completed = stats.get("completed", 0)
+        failed = stats.get("failed", 0)
 
         click.echo()
         click.echo(click.style(f"  {t('cli.queue.status_header')}", bold=True))
@@ -173,7 +175,7 @@ async def queue_status() -> None:
         click.echo(f"    {t('cli.queue.failed', count=failed)}")
         click.echo()
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @queue.command(name="list")
@@ -184,7 +186,10 @@ async def queue_list(status: str) -> None:
     services = await _get_services()
     try:
         queue = services["queue"]
-        items = await queue.list_items(status=status)
+        if status == "failed":
+            items = await queue.get_failed()
+        else:
+            items = await queue.get_pending()
 
         if not items:
             click.echo(f"  {t('cli.queue.list_empty')}")
@@ -193,10 +198,13 @@ async def queue_list(status: str) -> None:
         click.echo()
         click.echo(click.style(f"  {t('cli.queue.list_header')}", bold=True))
         for item in items:
-            click.echo(f"    {t('cli.queue.list_item', id=str(item.id), file_path=item.file_path, operation=item.operation, status=item.status)}")
+            click.echo(
+                f"    [{item.get('queue_id', '?')[:8]}] {item.get('file_path', '?')}"
+                f"  op={item.get('operation', '?')}  status={item.get('status', '?')}"
+            )
         click.echo()
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @queue.command(name="clear")
@@ -210,17 +218,15 @@ async def queue_clear(clear_all: bool, failed: bool) -> None:
         queue = services["queue"]
         if failed:
             count = await queue.clear_failed()
-        elif clear_all:
-            count = await queue.clear_all()
         else:
-            count = await queue.clear_failed()
+            count = await queue.clear_failed()  # Default: clear failed items
 
         click.echo(click.style(
             f"  {t('cli.queue.cleared_failed', count=count)}",
             fg="green",
         ))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @queue.command(name="retry")
@@ -237,4 +243,4 @@ async def queue_retry(retry_all: bool) -> None:
         else:
             click.echo("  Specify --all to retry all failed items.")
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()

@@ -1,4 +1,4 @@
-"""clawtion note commands -- CRUD for notes."""
+﻿"""clawtion note commands -- CRUD for notes."""
 
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ async def add(title: str, content: str, folder: str | None, tags: str | None) ->
         ))
         click.echo(f"  ID: {doc_id}")
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @note.command(name="get")
@@ -125,7 +125,7 @@ async def get(document_id: str) -> None:
             click.echo("  (no content)")
         click.echo()
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @note.command(name="update")
@@ -155,7 +155,7 @@ async def update(document_id: str, content: str | None, title: str | None) -> No
         else:
             click.echo(click.style(f"  {t('cli.note.not_found', id=document_id)}", fg="red"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @note.command(name="delete")
@@ -177,7 +177,7 @@ async def delete(document_id: str, permanent: bool) -> None:
         else:
             click.echo(click.style(f"  {t('cli.note.not_found', id=document_id)}", fg="red"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @note.command(name="list")
@@ -214,4 +214,4 @@ async def list_cmd(folder: str | None, limit: int, offset: int) -> None:
 
         click.echo()
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()

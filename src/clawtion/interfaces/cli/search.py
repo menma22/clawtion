@@ -1,4 +1,4 @@
-"""clawtion search commands -- semantic, keyword, and hybrid search."""
+﻿"""clawtion search commands -- semantic, keyword, and hybrid search."""
 
 from __future__ import annotations
 
@@ -144,4 +144,4 @@ async def search_cmd(
 
         _format_results(results, query, mode or "hybrid")
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()

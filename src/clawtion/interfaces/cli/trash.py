@@ -1,4 +1,4 @@
-"""clawtion trash commands -- list, restore, and empty the trash."""
+﻿"""clawtion trash commands -- list, restore, and empty the trash."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ async def list_cmd() -> None:
         click.echo(f"  {t('cli.trash.purge_info', days=days)}")
         click.echo()
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @trash.command(name="restore")
@@ -90,7 +90,7 @@ async def restore(item_id: str) -> None:
         else:
             click.echo(click.style(f"  {t('cli.trash.not_found', id=item_id)}", fg="red"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()
 
 
 @trash.command(name="empty")
@@ -105,4 +105,4 @@ async def empty() -> None:
 
         click.echo(click.style(f"  {t('cli.trash.emptied', count=count)}", fg="yellow"))
     finally:
-        await services["db"].close()
+        await services["db"].disconnect()

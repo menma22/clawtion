@@ -14,42 +14,35 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary:
-    'bg-primary text-text-inverse hover:bg-primary-hover active:bg-primary-active',
-  secondary:
-    'bg-surface-input text-text-primary hover:bg-border-default active:bg-border-default',
-  danger:
-    'bg-danger text-text-inverse hover:bg-danger-hover active:bg-danger-hover',
-  ghost:
-    'bg-transparent text-text-secondary hover:bg-surface-hover active:bg-surface-input',
+  primary: 'bg-text text-app hover:bg-text/85 active:bg-text/75',
+  secondary: 'bg-input text-text hover:bg-hover active:bg-active',
+  danger: 'bg-danger text-white hover:bg-danger-hover active:bg-danger-hover',
+  ghost: 'text-text-secondary hover:bg-hover active:bg-active',
 }
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-10 px-4 text-sm',
-  lg: 'h-12 px-6 text-base',
+  sm: 'h-7 px-2.5 text-[12px] rounded-md',
+  md: 'h-8 px-3.5 text-[13px] rounded-md',
+  lg: 'h-9 px-4 text-[14px] rounded-lg',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }, ref) => {
-    return (
-      <motion.button
-        ref={ref as any}
-        whileTap={disabled || loading ? undefined : { scale: 0.97 }}
-        whileHover={disabled || loading ? undefined : { scale: 1.01 }}
-        className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        )}
-        disabled={disabled || loading}
-        {...props}
-      >
-        {loading && <Spinner size="sm" className="text-current" />}
-        {children}
-      </motion.button>
-    )
-  },
+  ({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }, ref) => (
+    <motion.button
+      ref={ref as any}
+      whileTap={disabled || loading ? undefined : { scale: 0.98 }}
+      className={cn(
+        'inline-flex items-center justify-center gap-1.5 font-medium tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none',
+        variantClasses[variant],
+        sizeClasses[size],
+        className,
+      )}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading && <Spinner size="sm" className="text-current opacity-70" />}
+      {children}
+    </motion.button>
+  )
 )
 Button.displayName = 'Button'

@@ -1,108 +1,58 @@
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 
 export default function SettingsPage() {
-  const settings = useSettingsStore()
-  const addToast = useUIStore((s) => s.addToast)
+  const s = useSettingsStore()
+  const addToast = useUIStore((sm) => sm.addToast)
 
-  const handleSave = () => {
-    addToast({ type: 'success', title: '設定を保存しました（ローカル）' })
-  }
+  const radioBtn = (active: boolean) =>
+    `px-3 py-1 text-[12px] font-medium rounded-md cursor-pointer transition-colors ${active ? 'bg-text text-app' : 'text-text-secondary hover:bg-hover'}`
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto p-6"
-    >
-      <h1 className="text-2xl font-bold text-text-primary mb-6">設定</h1>
+    <div className="mx-auto max-w-xl px-8 py-8">
+      <h1 className="text-[22px] font-bold text-text tracking-tight mb-6">Settings</h1>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Vault */}
-        <section className="rounded-lg border border-border-default bg-surface-card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">Vault（ノート保存先）</h2>
-          <Input
-            value={settings.vaultPath}
-            onChange={(e) => settings.setVaultPath(e.target.value)}
-            placeholder="~/Documents/clawtion-vault"
-          />
+        <section>
+          <h2 className="text-[13px] font-semibold text-text mb-2">Vault</h2>
+          <input value={s.vaultPath} onChange={(e) => s.setVaultPath(e.target.value)}
+            className="h-9 w-full rounded-md border border-border bg-input px-2.5 text-[13px] text-text outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/10 transition-all" />
         </section>
 
-        {/* Embedding Provider */}
-        <section className="rounded-lg border border-border-default bg-surface-card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">Embedding プロバイダ</h2>
-          <div className="flex gap-4">
+        {/* Provider */}
+        <section>
+          <h2 className="text-[13px] font-semibold text-text mb-2">Embedding Provider</h2>
+          <div className="flex rounded-lg border border-border p-0.5 w-fit">
             {(['gemini', 'openai', 'ollama'] as const).map((p) => (
-              <label
-                key={p}
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                  settings.embeddingProvider === p
-                    ? 'bg-primary text-text-inverse'
-                    : 'bg-surface-input text-text-secondary hover:bg-border-default'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="provider"
-                  checked={settings.embeddingProvider === p}
-                  onChange={() => settings.setProvider(p)}
-                  className="sr-only"
-                />
-                {p === 'gemini' ? 'Gemini' : p === 'openai' ? 'OpenAI' : 'Ollama (ローカル)'}
+              <label key={p} className={radioBtn(s.embeddingProvider === p)}>
+                <input type="radio" name="provider" checked={s.embeddingProvider === p} onChange={() => s.setProvider(p)} className="sr-only" />
+                {p === 'gemini' ? 'Gemini' : p === 'openai' ? 'OpenAI' : 'Ollama'}
               </label>
             ))}
           </div>
         </section>
 
         {/* Theme */}
-        <section className="rounded-lg border border-border-default bg-surface-card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">テーマ</h2>
-          <div className="flex gap-4">
+        <section>
+          <h2 className="text-[13px] font-semibold text-text mb-2">Theme</h2>
+          <div className="flex rounded-lg border border-border p-0.5 w-fit">
             {(['light', 'dark', 'system'] as const).map((t) => (
-              <label
-                key={t}
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                  settings.theme === t
-                    ? 'bg-primary text-text-inverse'
-                    : 'bg-surface-input text-text-secondary hover:bg-border-default'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="theme"
-                  checked={settings.theme === t}
-                  onChange={() => settings.setTheme(t)}
-                  className="sr-only"
-                />
-                {t === 'light' ? 'ライト' : t === 'dark' ? 'ダーク' : 'システム'}
+              <label key={t} className={radioBtn(s.theme === t)}>
+                <input type="radio" name="theme" checked={s.theme === t} onChange={() => s.setTheme(t)} className="sr-only" />
+                {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'System'}
               </label>
             ))}
           </div>
         </section>
 
         {/* Language */}
-        <section className="rounded-lg border border-border-default bg-surface-card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">言語</h2>
-          <div className="flex gap-4">
+        <section>
+          <h2 className="text-[13px] font-semibold text-text mb-2">Language</h2>
+          <div className="flex rounded-lg border border-border p-0.5 w-fit">
             {(['ja', 'en'] as const).map((l) => (
-              <label
-                key={l}
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                  settings.language === l
-                    ? 'bg-primary text-text-inverse'
-                    : 'bg-surface-input text-text-secondary hover:bg-border-default'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="language"
-                  checked={settings.language === l}
-                  onChange={() => settings.setLanguage(l)}
-                  className="sr-only"
-                />
+              <label key={l} className={radioBtn(s.language === l)}>
+                <input type="radio" name="language" checked={s.language === l} onChange={() => s.setLanguage(l)} className="sr-only" />
                 {l === 'ja' ? '日本語' : 'English'}
               </label>
             ))}
@@ -110,38 +60,29 @@ export default function SettingsPage() {
         </section>
 
         {/* Chunking */}
-        <section className="rounded-lg border border-border-default bg-surface-card p-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">チャンキング</h2>
-          <label className="flex items-center gap-2 mb-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={settings.multiResolution}
-              onChange={(e) => settings.setMultiResolution(e.target.checked)}
-              className="rounded"
-            />
-            <span className="text-sm text-text-primary">マルチレゾリューション有効</span>
+        <section>
+          <h2 className="text-[13px] font-semibold text-text mb-2">Chunking</h2>
+          <label className="flex items-center gap-2 mb-2 cursor-pointer">
+            <input type="checkbox" checked={s.multiResolution} onChange={(e) => s.setMultiResolution(e.target.checked)} className="rounded" />
+            <span className="text-[13px] text-text">マルチレゾリューション</span>
           </label>
-          {settings.multiResolution && (
-            <div className="space-y-2 ml-6">
+          {s.multiResolution && (
+            <div className="space-y-1.5 ml-6">
               {(['file', 'coarse', 'fine'] as const).map((level) => (
                 <label key={level} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.enabledLevels[level]}
-                    onChange={(e) => settings.setLevel(level, e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-text-secondary">
-                    {level === 'file' ? 'File 粒度' : level === 'coarse' ? 'Coarse 粒度' : 'Fine 粒度'}
-                  </span>
+                  <input type="checkbox" checked={s.enabledLevels[level]} onChange={(e) => s.setLevel(level, e.target.checked)} className="rounded" />
+                  <span className="text-[12px] text-text-secondary">{level}粒度</span>
                 </label>
               ))}
             </div>
           )}
         </section>
 
-        <Button onClick={handleSave}>保存</Button>
+        <button onClick={() => addToast({ type: 'success', title: '設定を保存しました' })}
+          className="rounded-lg bg-text px-4 py-1.5 text-[13px] font-medium text-app hover:bg-text/85 transition-colors cursor-pointer">
+          保存
+        </button>
       </div>
-    </motion.div>
+    </div>
   )
 }

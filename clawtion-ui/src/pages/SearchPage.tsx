@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { SearchIcon } from 'lucide-react'
 import { SearchBar } from '@/components/search/SearchBar'
 import { SearchResultCard } from '@/components/search/SearchResultCard'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { useSearch } from '@/hooks/useSearch'
 import { useSearchStore } from '@/stores/searchStore'
-import { SearchIcon } from 'lucide-react'
 
 export default function SearchPage() {
   const query = useSearchStore((s) => s.query)
@@ -17,9 +16,7 @@ export default function SearchPage() {
   const folderFilter = useSearchStore((s) => s.folderFilter)
 
   const [searchRequest, setSearchRequest] = useState<{
-    query: string
-    granularity: typeof granularity
-    top_k: number
+    query: string; granularity: typeof granularity; top_k: number
     metadata_filter?: { folder?: string }
   } | null>(null)
 
@@ -29,84 +26,47 @@ export default function SearchPage() {
 
   const handleSearch = () => {
     if (!query.trim()) return
-    setSearchRequest({
-      query: query.trim(),
-      granularity,
-      top_k: topK,
-      metadata_filter: folderFilter ? { folder: folderFilter } : undefined,
-    })
+    setSearchRequest({ query: query.trim(), granularity, top_k: topK, metadata_filter: folderFilter ? { folder: folderFilter } : undefined })
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-2xl font-bold text-text-primary mb-4">検索</h1>
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          onSearch={handleSearch}
-          isLoading={isLoading}
-        />
-        <div className="mt-3">
-          <SearchFilters />
-        </div>
-      </motion.div>
+    <div className="mx-auto max-w-3xl px-8 py-8">
+      <h1 className="text-[22px] font-bold text-text tracking-tight mb-5">Search</h1>
 
-      {/* Results meta */}
+      <SearchBar value={query} onChange={setQuery} onSearch={handleSearch} isLoading={isLoading} />
+      <div className="mt-3"><SearchFilters /></div>
+
       {meta && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-6 mb-3 text-sm text-text-muted"
-        >
-          {String(meta.total_results)}件の結果 ({String(meta.execution_time_ms)}ms) — {searchType}
-        </motion.div>
+        <div className="mt-5 mb-1 text-[12px] text-text-tertiary">
+          {String(meta.total_results)}件 ({String(meta.execution_time_ms)}ms)
+        </div>
       )}
 
-      {/* Results */}
-      <div className="mt-3 space-y-3">
-        {isLoading && (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        )}
+      <div className="mt-3 space-y-2">
+        {isLoading && <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>}
 
-        {!isLoading &&
-          results.map((result, i) => (
-            <SearchResultCard key={result.chunk_id || i} result={result} index={i} />
-          ))}
+        {!isLoading && searchRequest && results.map((r, i) => (
+          <SearchResultCard key={r.chunk_id || i} result={r} index={i} />
+        ))}
 
         {!isLoading && searchRequest && results.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-16 text-center"
-          >
-            <SearchIcon size={40} className="text-text-muted mb-3" />
-            <p className="text-text-secondary font-medium mb-1">検索結果がありません</p>
-            <p className="text-sm text-text-muted">
-              別のキーワードや条件で検索してみてください
-            </p>
-          </motion.div>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-hover mb-4">
+              <SearchIcon size={22} className="text-text-tertiary" />
+            </div>
+            <h3 className="text-[15px] font-semibold text-text mb-1">結果が見つかりません</h3>
+            <p className="text-[13px] text-text-secondary">別のキーワードで検索してみてください</p>
+          </div>
         )}
 
         {!searchRequest && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-16 text-center"
-          >
-            <SearchIcon size={40} className="text-text-muted mb-3" />
-            <p className="text-text-secondary font-medium mb-1">検索クエリを入力してください</p>
-            <p className="text-sm text-text-muted">
-              ハイブリッド検索で、あなたのナレッジベースを探索します
-            </p>
-          </motion.div>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-hover mb-4">
+              <SearchIcon size={22} className="text-text-tertiary" />
+            </div>
+            <h3 className="text-[15px] font-semibold text-text mb-1">ナレッジベースを検索</h3>
+            <p className="text-[13px] text-text-secondary">ハイブリッド検索で、あなたのノートを探索します</p>
+          </div>
         )}
       </div>
     </div>

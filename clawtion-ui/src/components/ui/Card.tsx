@@ -9,9 +9,10 @@ interface CardProps extends HTMLMotionProps<'div'> {
 export function Card({ children, className, hover = false, ...props }: CardProps) {
   return (
     <motion.div
-      whileHover={hover ? { y: -2, boxShadow: 'var(--shadow-card-hover)' } : undefined}
+      whileHover={hover ? { scale: 1.005 } : undefined}
       className={cn(
-        'rounded-lg border border-border-default bg-surface-card p-6 shadow-card',
+        'rounded-lg border border-border bg-card p-5 shadow-sm',
+        hover && 'cursor-pointer hover:shadow-md transition-shadow',
         className,
       )}
       {...props}

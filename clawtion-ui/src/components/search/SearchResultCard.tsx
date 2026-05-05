@@ -1,68 +1,46 @@
 import { motion } from 'framer-motion'
-import { FileText, ChevronRight } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { truncate } from '@/lib/utils'
-import { Badge } from '@/components/ui/Badge'
 import type { SearchResultItem } from '@/types/api'
 
-interface SearchResultCardProps {
-  result: SearchResultItem
-  index: number
-}
+interface SearchResultCardProps { result: SearchResultItem; index: number }
 
 export function SearchResultCard({ result, index }: SearchResultCardProps) {
   const navigate = useNavigate()
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.25 }}
-      whileHover={{ y: -1 }}
-      className="group cursor-pointer rounded-lg border border-border-default bg-surface-card p-4 hover:border-primary/30 hover:shadow-card-hover transition-all"
+      transition={{ delay: index * 0.035, duration: 0.2 }}
+      className="group cursor-pointer rounded-lg border border-border bg-card p-4 hover:border-accent/20 hover:shadow-sm transition-all"
       onClick={() => {
-        if (result.chunk_id) {
-          navigate(`/search/chunks/${result.chunk_id}`)
-        } else if (result.document_id) {
-          navigate(`/notes/${result.document_id}`)
-        }
+        if (result.chunk_id) navigate(`/search/chunks/${result.chunk_id}`)
+        else if (result.document_id) navigate(`/notes/${result.document_id}`)
       }}
     >
       <div className="flex items-start gap-3">
-        <FileText size={18} className="mt-0.5 text-text-muted shrink-0" />
+        <FileText size={16} className="mt-0.5 text-text-tertiary shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-text-primary truncate">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="text-[14px] font-semibold text-text truncate">
               {result.title || result.file_path}
             </h3>
-            <Badge
-              variant={
-                result.score >= 0.9 ? 'success' : result.score >= 0.7 ? 'warning' : 'info'
-              }
-              className="shrink-0"
-            >
-              スコア: {result.score.toFixed(2)}
-            </Badge>
+            <span className="text-[11px] font-medium text-text-tertiary shrink-0 tabular-nums">
+              {result.score.toFixed(2)}
+            </span>
             {result.chunk_level && (
-              <Badge variant="default" className="shrink-0">
+              <span className="text-[10px] font-medium text-text-tertiary bg-hover rounded px-1.5 py-0.5 shrink-0">
                 {result.chunk_level}
-              </Badge>
+              </span>
             )}
           </div>
-          <p className="text-xs text-text-muted mb-2">{result.file_path}</p>
-          <p className="text-sm text-text-secondary leading-relaxed">
-            {truncate(result.content, 250)}
+          <p className="text-[11px] text-text-tertiary mb-1.5">{result.file_path}</p>
+          <p className="text-[13px] text-text-secondary leading-relaxed line-clamp-3">
+            {truncate(result.content, 300)}
           </p>
-          {result.heading_path && (
-            <p className="text-xs text-text-muted mt-1">
-              セクション: {result.heading_path}
-            </p>
-          )}
         </div>
-        <ChevronRight
-          size={16}
-          className="mt-2 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-        />
       </div>
     </motion.div>
   )

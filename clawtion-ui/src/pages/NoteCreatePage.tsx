@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { TagInput } from '@/components/notes/TagInput'
 import { TipTapEditor } from '@/components/notes/TipTapEditor'
@@ -20,80 +18,50 @@ export default function NoteCreatePage() {
   const [tags, setTags] = useState<string[]>([])
 
   const handleCreate = async () => {
-    if (!title.trim() || !content.trim()) {
-      addToast({ type: 'warning', title: 'タイトルと内容を入力してください' })
-      return
-    }
-
+    if (!title.trim()) { addToast({ type: 'warning', title: 'タイトルを入力してください' }); return }
     try {
       const res = await createNote.mutateAsync({
-        title: title.trim(),
-        content,
-        folder: folder.trim() || undefined,
+        title: title.trim(), content, folder: folder.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined,
       })
       addToast({ type: 'success', title: 'ノートを作成しました' })
       navigate(`/notes/${res.data.document_id}`)
-    } catch {
-      addToast({ type: 'error', title: 'ノートの作成に失敗しました' })
-    }
+    } catch { addToast({ type: 'error', title: '作成に失敗しました' }) }
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto p-6"
-    >
-      <div className="mb-6 flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-lg text-text-muted hover:bg-surface-input hover:text-text-secondary transition-colors cursor-pointer"
-        >
-          <ArrowLeft size={20} />
+    <div className="mx-auto max-w-3xl px-8 py-8">
+      <div className="mb-6 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="rounded-md p-1.5 text-text-tertiary hover:bg-hover hover:text-text-secondary transition-colors cursor-pointer">
+          <ArrowLeft size={18} />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">新規ノート作成</h1>
-          <p className="text-sm text-text-muted mt-1">新しいノートを作成します</p>
+        <div className="flex-1">
+          <Input
+            value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder="ノートタイトル"
+            className="text-[20px] font-bold border-none bg-transparent px-0 h-auto w-full"
+          />
+          <div className="flex items-center gap-2 mt-1">
+            <Input value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="フォルダ (任意)" className="h-7 text-[12px] w-48" />
+            <TagInput tags={tags} onChange={setTags} placeholder="タグ..." className="h-7 text-[12px]" />
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4 mb-6">
-        <Input
-          label="タイトル"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="ノートのタイトル"
-        />
-        <Input
-          label="フォルダ"
-          value={folder}
-          onChange={(e) => setFolder(e.target.value)}
-          placeholder="例: tech/rag"
-        />
-        <div>
-          <label className="text-sm font-medium text-text-secondary mb-1 block">
-            タグ
-          </label>
-          <TagInput tags={tags} onChange={setTags} />
-        </div>
-      </div>
+      <TipTapEditor content={content} onChange={setContent} />
 
-      <div className="mb-4">
-        <label className="text-sm font-medium text-text-secondary mb-2 block">
-          内容 (Markdown)
-        </label>
-        <TipTapEditor content={content} onChange={setContent} />
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Button onClick={handleCreate} loading={createNote.isPending}>
-          作成
-        </Button>
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          onClick={handleCreate}
+          disabled={createNote.isPending || !title.trim()}
+          className="rounded-lg bg-text px-4 py-1.5 text-[13px] font-medium text-app hover:bg-text/85 disabled:opacity-30 transition-colors cursor-pointer"
+        >
+          {createNote.isPending ? '作成中...' : '作成'}
+        </button>
+        <button onClick={() => navigate(-1)} className="rounded-lg px-4 py-1.5 text-[13px] font-medium text-text-secondary hover:bg-hover transition-colors cursor-pointer">
           キャンセル
-        </Button>
+        </button>
       </div>
-    </motion.div>
+    </div>
   )
 }

@@ -83,9 +83,8 @@ def setup_logging(log_dir: str | Path | None = None, level: str | None = None) -
     # Configure root logger to accept everything; handlers filter per-level
     logging.basicConfig(
         format="%(message)s",
-        stream=sys.stdout,
         level=logging.DEBUG,
-        handlers=[file_handler],
+        handlers=[console_handler, file_handler],
     )
 
     # Quiet noisy third-party loggers

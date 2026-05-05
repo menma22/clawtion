@@ -1,70 +1,42 @@
-import { useState, type KeyboardEvent, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useRef, useEffect, type KeyboardEvent } from 'react'
 import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SearchBarProps {
-  value: string
-  onChange: (v: string) => void
-  onSearch: () => void
-  isLoading?: boolean
-  className?: string
+  value: string; onChange: (v: string) => void; onSearch: () => void
+  isLoading?: boolean; className?: string
 }
 
-export function SearchBar({
-  value,
-  onChange,
-  onSearch,
-  isLoading,
-  className,
-}: SearchBarProps) {
+export function SearchBar({ value, onChange, onSearch, isLoading, className }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [focused, setFocused] = useState(false)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+  useEffect(() => { inputRef.current?.focus() }, [])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') onSearch()
   }
 
   return (
-    <motion.div
-      animate={focused ? { scale: 1.01 } : { scale: 1 }}
-      className={cn(
-        'flex items-center gap-2 rounded-xl border-2 bg-surface-input transition-colors',
-        focused ? 'border-primary shadow-sm shadow-primary/10' : 'border-transparent',
-        className,
-      )}
-    >
-      <Search size={20} className="ml-4 text-text-muted shrink-0" />
+    <div className={cn('flex items-center gap-2 rounded-lg border border-border bg-input px-3 transition-all focus-within:border-accent/30 focus-within:ring-2 focus-within:ring-accent/10', className)}>
+      <Search size={16} className="text-text-tertiary shrink-0" />
       <input
-        ref={inputRef}
-        type="text"
-        value={value}
+        ref={inputRef} type="text" value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder="ノートを検索... (Enterで実行)"
-        className="flex-1 bg-transparent py-3 text-base text-text-primary placeholder:text-text-muted outline-none"
+        placeholder="ノートを検索..."
+        className="flex-1 bg-transparent py-2.5 text-[14px] text-text placeholder:text-text-tertiary outline-none"
       />
       {value && (
-        <button
-          onClick={() => onChange('')}
-          className="p-1 text-text-muted hover:text-text-secondary cursor-pointer"
-        >
-          <X size={18} />
+        <button onClick={() => onChange('')} className="p-0.5 text-text-tertiary hover:text-text-secondary cursor-pointer">
+          <X size={16} />
         </button>
       )}
       <button
-        onClick={onSearch}
-        disabled={!value.trim() || isLoading}
-        className="mr-2 rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+        onClick={onSearch} disabled={!value.trim() || isLoading}
+        className="rounded-md bg-text px-3 py-1 text-[12px] font-medium text-app hover:bg-text/85 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
       >
         {isLoading ? '検索中...' : '検索'}
       </button>
-    </motion.div>
+    </div>
   )
 }

@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import { NoteTable } from '@/components/notes/NoteTable'
 import { useNotes } from '@/hooks/useNotes'
 import { useNoteStore } from '@/stores/noteStore'
@@ -16,48 +15,43 @@ export default function NoteListPage() {
   const notes = data?.data ?? []
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-4xl px-8 py-8">
+      <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">ノート</h1>
-          <p className="text-sm text-text-muted mt-1">
-            {folderFilter ? `フォルダ: ${folderFilter}` : 'すべてのノート'}
-            {data?.meta && ` — ${notes.length}件`}
+          <h1 className="text-[22px] font-bold text-text tracking-tight">Notes</h1>
+          <p className="text-[13px] text-text-secondary mt-0.5">
+            {folderFilter || 'すべてのノート'}
+            {notes.length > 0 && <span className="text-text-tertiary"> — {notes.length}件</span>}
           </p>
         </div>
-        <Button onClick={() => navigate('/notes/new')}>
-          <Plus size={18} />
+        <button
+          onClick={() => navigate('/notes/new')}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-text px-3.5 py-1.5 text-[13px] font-medium text-app hover:bg-text/85 transition-colors cursor-pointer"
+        >
+          <Plus size={16} />
           新規ノート
-        </Button>
+        </button>
       </div>
 
-      <NoteTable
-        notes={notes}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => refetch()}
-      />
+      <NoteTable notes={notes} isLoading={isLoading} isError={isError} onRetry={() => refetch()} />
 
-      {/* Pagination */}
       {notes.length > 0 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="mt-4 flex items-center justify-center gap-1">
+          <button
             disabled={page === 0}
             onClick={() => setPage(page - 1)}
+            className="rounded-md px-3 py-1 text-[12px] font-medium text-text-secondary hover:bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            前のページ
-          </Button>
-          <span className="text-sm text-text-muted">ページ {page + 1}</span>
-          <Button
-            variant="ghost"
-            size="sm"
+            ← 前
+          </button>
+          <span className="text-[12px] text-text-tertiary px-2">{page + 1}</span>
+          <button
             disabled={notes.length < pageSize}
             onClick={() => setPage(page + 1)}
+            className="rounded-md px-3 py-1 text-[12px] font-medium text-text-secondary hover:bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            次のページ
-          </Button>
+            次 →
+          </button>
         </div>
       )}
     </div>

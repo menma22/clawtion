@@ -32,6 +32,7 @@ _config: dict[str, Any] | None = None
 
 _ENV_OVERRIDES: dict[str, list[str]] = {
     "CLAWTION_VAULT": ["vault", "path"],
+    "CLAWTION_DB_URL": ["database", "url"],
     "CLAWTION_LOG_LEVEL": ["logging", "level"],
 }
 

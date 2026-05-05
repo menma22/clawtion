@@ -1,8 +1,4 @@
-import { motion } from 'framer-motion'
 import { RotateCw, Play, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { useQueueStatus, usePendingJobs, useFailedJobs, useProcessQueue, useRetryJob, useClearFailed } from '@/hooks/useQueue'
 import { useUIStore } from '@/stores/uiStore'
@@ -22,120 +18,97 @@ export default function QueuePage() {
   const failed = failedData?.data ?? []
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6">
+    <div className="mx-auto max-w-4xl px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">キュー管理</h1>
-          <p className="text-sm text-text-muted mt-1">Indexing ジョブの状態と管理</p>
+          <h1 className="text-[22px] font-bold text-text tracking-tight">Queue</h1>
+          <p className="text-[13px] text-text-secondary mt-0.5">Indexing ジョブの状態</p>
         </div>
-        <Button onClick={() => processQueue.mutate()} loading={processQueue.isPending}>
-          <Play size={16} />
-          キュー処理
-        </Button>
+        <button onClick={() => processQueue.mutate()} disabled={processQueue.isPending}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-text px-3.5 py-1.5 text-[13px] font-medium text-app hover:bg-text/85 disabled:opacity-30 transition-colors cursor-pointer">
+          <Play size={14} />処理実行
+        </button>
       </div>
 
-      {/* Stats cards */}
-      {statsLoading ? (
-        <div className="flex justify-center py-8"><Spinner /></div>
-      ) : stats ? (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      {statsLoading ? <div className="flex justify-center py-12"><Spinner /></div> : stats ? (
+        <div className="grid grid-cols-5 gap-3 mb-8">
           {[
-            ['合計', stats.total, 'default'],
-            ['保留中', stats.pending, 'warning'],
-            ['処理中', stats.processing, 'info'],
-            ['完了', stats.completed, 'success'],
-            ['失敗', stats.failed, 'danger'],
-          ].map(([label, value, variant]) => (
-            <Card key={label as string} className="text-center py-4">
-              <p className="text-2xl font-bold text-text-primary">{value as number}</p>
-              <Badge variant={variant as 'success' | 'warning' | 'danger' | 'info' | 'default'}>
-                {label as string}
-              </Badge>
-            </Card>
+            ['Total', stats.total, 'text-text'],
+            ['Pending', stats.pending, 'text-warning'],
+            ['Processing', stats.processing, 'text-accent'],
+            ['Done', stats.completed, 'text-success'],
+            ['Failed', stats.failed, 'text-danger'],
+          ].map(([label, value, color]) => (
+            <div key={label as string} className="rounded-lg border border-border bg-card p-4 text-center">
+              <p className={`text-2xl font-bold ${color} tabular-nums`}>{value as number}</p>
+              <p className="text-[11px] font-medium text-text-tertiary mt-0.5">{label as string}</p>
+            </div>
           ))}
         </div>
       ) : null}
 
-      {/* Pending jobs */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-text-primary mb-3">保留中ジョブ</h2>
-        {pendingLoading ? (
-          <Spinner />
-        ) : pending.length === 0 ? (
-          <p className="text-sm text-text-muted">保留中のジョブはありません</p>
+      {/* Pending */}
+      <section className="mb-6">
+        <h2 className="text-[15px] font-semibold text-text mb-2">Pending Jobs</h2>
+        {pendingLoading ? <Spinner /> : pending.length === 0 ? (
+          <p className="text-[12px] text-text-tertiary">保留中のジョブはありません</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border-default">
-            <table className="w-full text-sm">
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-[12px]">
               <thead>
-                <tr className="border-b border-border-default bg-surface-sidebar">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">ファイル</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">操作</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">優先度</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">作成日</th>
+                <tr className="border-b border-border bg-sidebar/50">
+                  <th className="px-3 py-2 text-left font-medium text-text-tertiary">File</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-tertiary">Op</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-tertiary">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
+              <tbody className="divide-y divide-border">
                 {pending.map((job) => (
-                  <tr key={job.queue_id} className="hover:bg-surface-hover">
-                    <td className="px-3 py-2 text-text-primary truncate max-w-40">{job.file_path}</td>
-                    <td className="px-3 py-2"><Badge variant="warning">{job.operation}</Badge></td>
-                    <td className="px-3 py-2 text-text-muted">{job.priority}</td>
-                    <td className="px-3 py-2 text-text-muted">{formatRelativeTime(job.created_at)}</td>
+                  <tr key={job.queue_id} className="hover:bg-hover/50">
+                    <td className="px-3 py-2 text-text truncate max-w-60">{job.file_path}</td>
+                    <td className="px-3 py-2"><span className="rounded bg-warning-subtle px-1.5 py-0.5 text-[10px] font-medium text-warning">{job.operation}</span></td>
+                    <td className="px-3 py-2 text-text-tertiary tabular-nums">{formatRelativeTime(job.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Failed jobs */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-text-primary">失敗ジョブ</h2>
+      {/* Failed */}
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[15px] font-semibold text-text">Failed Jobs</h2>
           {failed.length > 0 && (
-            <Button variant="danger" size="sm" onClick={() => {
-              clearFailed.mutate()
-              addToast({ type: 'success', title: '失敗ジョブをクリアしました' })
-            }}>
-              <Trash2 size={14} />
-              すべてクリア
-            </Button>
+            <button onClick={() => { clearFailed.mutate(); addToast({ type: 'success', title: 'クリアしました' }) }}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-danger hover:bg-danger-subtle transition-colors cursor-pointer">
+              <Trash2 size={12} />Clear all
+            </button>
           )}
         </div>
-        {failedLoading ? (
-          <Spinner />
-        ) : failed.length === 0 ? (
-          <p className="text-sm text-text-muted">失敗したジョブはありません</p>
+        {failedLoading ? <Spinner /> : failed.length === 0 ? (
+          <p className="text-[12px] text-text-tertiary">失敗ジョブはありません</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border-default">
-            <table className="w-full text-sm">
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-[12px]">
               <thead>
-                <tr className="border-b border-border-default bg-surface-sidebar">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">ファイル</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">エラー</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-text-muted">リトライ</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-text-muted">操作</th>
+                <tr className="border-b border-border bg-sidebar/50">
+                  <th className="px-3 py-2 text-left font-medium text-text-tertiary">File</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-tertiary">Error</th>
+                  <th className="px-3 py-2 text-right font-medium text-text-tertiary">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
+              <tbody className="divide-y divide-border">
                 {failed.map((job) => (
-                  <tr key={job.queue_id} className="hover:bg-surface-hover">
-                    <td className="px-3 py-2 text-text-primary truncate max-w-40">{job.file_path}</td>
-                    <td className="px-3 py-2 text-danger text-xs truncate max-w-60">{job.last_error || '-'}</td>
-                    <td className="px-3 py-2 text-text-muted">{job.retry_count}/{job.max_retries}</td>
+                  <tr key={job.queue_id} className="hover:bg-hover/50">
+                    <td className="px-3 py-2 text-text truncate max-w-48">{job.file_path}</td>
+                    <td className="px-3 py-2 text-danger truncate max-w-72 text-[11px]">{job.last_error || '—'}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          retryJob.mutate(job.queue_id)
-                          addToast({ type: 'info', title: '再試行を開始しました' })
-                        }}
-                      >
-                        <RotateCw size={14} />
-                        再試行
-                      </Button>
+                      <button onClick={() => { retryJob.mutate(job.queue_id); addToast({ type: 'info', title: '再試行開始' }) }}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-text-secondary hover:bg-hover transition-colors cursor-pointer">
+                        <RotateCw size={12} />Retry
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -143,7 +116,7 @@ export default function QueuePage() {
             </table>
           </div>
         )}
-      </div>
-    </motion.div>
+      </section>
+    </div>
   )
 }

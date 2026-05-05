@@ -1,5 +1,6 @@
 import { useSearchStore } from '@/stores/searchStore'
 import type { ChunkLevel } from '@/types/api'
+import { cn } from '@/lib/utils'
 
 export function SearchFilters() {
   const searchType = useSearchStore((s) => s.searchType)
@@ -9,60 +10,35 @@ export function SearchFilters() {
   const topK = useSearchStore((s) => s.topK)
   const setTopK = useSearchStore((s) => s.setTopK)
 
+  const radioStyle = (active: boolean) => cn(
+    'px-2.5 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-colors',
+    active ? 'bg-text text-app' : 'text-text-secondary hover:bg-hover',
+  )
+
+  const selectStyle = 'rounded-md border border-border bg-input px-2 py-1 text-[11px] text-text cursor-pointer outline-none'
+
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <fieldset className="flex items-center gap-1">
-        <legend className="text-xs font-medium text-text-muted mr-2">検索タイプ</legend>
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center rounded-lg border border-border p-0.5">
         {(['hybrid', 'semantic', 'keyword'] as const).map((type) => (
-          <label
-            key={type}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${
-              searchType === type
-                ? 'bg-primary text-text-inverse'
-                : 'bg-surface-input text-text-secondary hover:bg-border-default'
-            }`}
-          >
-            <input
-              type="radio"
-              name="searchType"
-              value={type}
-              checked={searchType === type}
-              onChange={() => setSearchType(type)}
-              className="sr-only"
-            />
-            {type === 'hybrid' ? 'ハイブリッド' : type === 'semantic' ? 'セマンティック' : 'キーワード'}
+          <label key={type} className={radioStyle(searchType === type)}>
+            <input type="radio" name="searchType" value={type} checked={searchType === type}
+              onChange={() => setSearchType(type)} className="sr-only" />
+            {type === 'hybrid' ? 'Hybrid' : type === 'semantic' ? 'Semantic' : 'Keyword'}
           </label>
         ))}
-      </fieldset>
-
-      <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-text-muted">粒度</label>
-        <select
-          value={granularity}
-          onChange={(e) => setGranularity(e.target.value as ChunkLevel)}
-          className="rounded-md border border-border-default bg-surface-input px-2 py-1.5 text-xs text-text-primary cursor-pointer"
-        >
-          <option value="file">ファイル</option>
-          <option value="coarse">粗粒度</option>
-          <option value="fine">細粒度</option>
-          <option value="all">すべて</option>
-        </select>
       </div>
 
-      <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-text-muted">件数</label>
-        <select
-          value={topK}
-          onChange={(e) => setTopK(Number(e.target.value))}
-          className="rounded-md border border-border-default bg-surface-input px-2 py-1.5 text-xs text-text-primary cursor-pointer"
-        >
-          {[5, 10, 20, 30, 50].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </div>
+      <select value={granularity} onChange={(e) => setGranularity(e.target.value as ChunkLevel)} className={selectStyle}>
+        <option value="file">File</option>
+        <option value="coarse">Coarse</option>
+        <option value="fine">Fine</option>
+        <option value="all">All</option>
+      </select>
+
+      <select value={topK} onChange={(e) => setTopK(Number(e.target.value))} className={selectStyle}>
+        {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n} results</option>)}
+      </select>
     </div>
   )
 }

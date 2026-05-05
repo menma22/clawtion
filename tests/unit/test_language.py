@@ -1,6 +1,5 @@
 """Unit tests for language detection."""
 
-import pytest
 
 from clawtion.utils.language import detect_language, is_cjk
 

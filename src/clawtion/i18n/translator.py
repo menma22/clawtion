@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import locale
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -48,7 +49,7 @@ def _detect_language() -> str:
         if code:
             return code
     try:
-        sys_lang, _ = locale.getdefaultlocale()
+        sys_lang = _get_os_locale()
         if sys_lang:
             code = sys_lang.split("_")[0].lower()
             if code:
@@ -56,6 +57,36 @@ def _detect_language() -> str:
     except Exception:
         pass
     return "en"
+
+
+def _get_os_locale() -> str:
+    """Get the OS locale as a locale string (e.g. ``"ja_JP"``).
+
+    Uses platform-specific logic to return a POSIX-style locale identifier
+    regardless of the underlying OS.
+    """
+    if sys.platform == "win32":
+        # On Windows, getlocale() returns names like "Japanese_Japan".
+        # Use windows_locale mapping (LCID → POSIX locale) for reliable codes.
+        try:
+            import ctypes
+
+            lcid: int = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+            posix_locale: str = locale.windows_locale.get(lcid, "")
+            if posix_locale:
+                return posix_locale
+        except (ImportError, AttributeError):
+            pass
+
+    # POSIX platforms (macOS, Linux) and Windows fallback
+    try:
+        sys_lang, _ = locale.getlocale(locale.LC_CTYPE)
+        if sys_lang:
+            return sys_lang
+    except Exception:
+        pass
+
+    return ""
 
 
 # ---------------------------------------------------------------------------

@@ -1,16 +1,14 @@
 """Unit tests for chunking algorithms."""
 
-import pytest
 from clawtion.core.indexing.chunker import (
     Chunk,
-    ChunkLevel,
-    chunk_file_level,
     build_context,
-    split_by_markdown_headings,
-    split_by_paragraphs,
+    chunk_file_level,
     is_code_block,
     is_table,
     merge_short_adjacent,
+    split_by_markdown_headings,
+    split_by_paragraphs,
 )
 
 

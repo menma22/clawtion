@@ -1,13 +1,12 @@
 """Unit tests for internationalization module."""
 
-import pytest
 
 from clawtion.i18n.translator import (
-    t,
-    set_language,
+    _resolve_key,
     get_current_language,
     reload_locales,
-    _resolve_key,
+    set_language,
+    t,
 )
 
 

@@ -1,11 +1,9 @@
 """Unit tests for configuration loader."""
 
-import os
 
-import pytest
 
 from clawtion.config.defaults import DEFAULT_CONFIG
-from clawtion.config.loader import get_config, reload_config, _deep_merge
+from clawtion.config.loader import _deep_merge, get_config, reload_config
 
 
 class TestDefaults:

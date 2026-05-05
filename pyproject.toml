@@ -81,10 +81,6 @@ warn_unused_ignores = true
 python_version = "3.11"
 
 [[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
 module = [
     "clawtion.config.loader",
     "clawtion.interfaces.cli.config",

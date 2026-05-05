@@ -1,14 +1,13 @@
 """Unit tests for clawtion exception hierarchy."""
 
-import pytest
 from clawtion.utils.exceptions import (
     ClawtionError,
     DocumentNotFoundError,
     EmbeddingError,
     IndexingError,
-    VaultError,
-    ValidationError,
     QueueError,
+    ValidationError,
+    VaultError,
 )
 
 

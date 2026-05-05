@@ -1,8 +1,6 @@
 """Unit tests for retry mechanism."""
 
-import asyncio
 
-import pytest
 
 from clawtion.utils.retry import RetryConfig
 

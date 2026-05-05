@@ -1,6 +1,5 @@
 """Unit tests for token counting."""
 
-import pytest
 
 from clawtion.utils.tokens import count_tokens
 

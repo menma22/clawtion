@@ -4,54 +4,53 @@ description: Design tokens and visual identity for clawtion — AI knowledge bas
 version: "1.0"
 
 colors:
-  primary: "#3b82f6"
-  primary-hover: "#2563eb"
-  primary-active: "#1d4ed8"
-  primary-subtle: "#eff6ff"
-  secondary: "#6366f1"
+  accent: "#4f46e5"        # Indigo — sophisticated, calm
+  accent-hover: "#4338ca"
+  accent-subtle: "#eef2ff"
+  accent-muted: "#e0e7ff"
   danger: "#ef4444"
   danger-hover: "#dc2626"
-  success: "#22c55e"
-  success-subtle: "#f0fdf4"
+  danger-subtle: "#fef2f2"
+  success: "#10b981"
+  success-subtle: "#ecfdf5"
   warning: "#f59e0b"
   warning-subtle: "#fffbeb"
-  info: "#0ea5e9"
 
   surface:
-    app: "#ffffff"
-    sidebar: "#f8fafc"
+    app: "#ffffff"         # Warm white
+    sidebar: "#f7f6f4"    # Notion-style warm gray
     card: "#ffffff"
-    input: "#f1f5f9"
-    hover: "#f8fafc"
-    overlay: "rgba(15, 23, 42, 0.5)"
+    input: "#f2f1ef"
+    hover: "#f2f1ef"
+    active: "#ebeae8"
+    overlay: "rgba(0, 0, 0, 0.4)"
 
   border:
-    default: "#e2e8f0"
-    subtle: "#f1f5f9"
-    focus: "#3b82f6"
+    default: "#e9e7e4"
+    subtle: "#f2f1ef"
+    focus: "#4f46e5"
 
   text:
-    primary: "#0f172a"
-    secondary: "#475569"
-    muted: "#94a3b8"
+    primary: "#1a1a1a"
+    secondary: "#6b6b6b"
+    tertiary: "#9e9e9e"
     inverse: "#ffffff"
-    link: "#3b82f6"
 
   dark:
     surface:
-      app: "#0f172a"
-      sidebar: "#1e293b"
-      card: "#1e293b"
-      input: "#334155"
-      hover: "#1e293b"
-      overlay: "rgba(0, 0, 0, 0.6)"
+      app: "#191919"
+      sidebar: "#1e1e1e"
+      card: "#252525"
+      input: "#2a2a2a"
+      hover: "#2a2a2a"
+      active: "#333333"
     border:
-      default: "#334155"
-      subtle: "#1e293b"
+      default: "#333333"
+      subtle: "#2a2a2a"
     text:
-      primary: "#f1f5f9"
-      secondary: "#94a3b8"
-      muted: "#64748b"
+      primary: "#e4e4e4"
+      secondary: "#999999"
+      tertiary: "#666666"
 
 typography:
   display-lg:

@@ -42,10 +42,26 @@ async def db_manager(db_url: str):
     await manager.execute("CREATE EXTENSION IF NOT EXISTS vector")
     await manager.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
 
-    # Run migrations to create tables
-    from clawtion.core.db.migrations import run_migrations
+    # Create tables directly via SQLAlchemy metadata (avoids Alembic asyncio.run() issue)
+    from sqlalchemy.ext.asyncio import create_async_engine
 
-    await run_migrations(db_url)
+    from clawtion.core.db.models import Base
+
+    engine = create_async_engine(db_url)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    await engine.dispose()
+
+    # Manually create tsvector column (SQLAlchemy create_all doesn't handle
+    # Computed GENERATED ALWAYS columns correctly for asyncpg)
+    await manager.execute(
+        "ALTER TABLE document_chunks "
+        "ADD COLUMN IF NOT EXISTS tsvector tsvector "
+        "GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED"
+    )
+    await manager.execute(
+        "CREATE INDEX IF NOT EXISTS idx_chunks_tsvector ON document_chunks USING GIN (tsvector)"
+    )
 
     yield manager
 

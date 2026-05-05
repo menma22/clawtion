@@ -186,12 +186,15 @@ class DatabaseManager:
 
         Returns:
             A list of result rows (each row is a lightweight
-            :class:`~sqlalchemy.engine.Row` object).
+            :class:`~sqlalchemy.engine.Row` object). Returns empty list
+            for DDL statements that produce no rows.
         """
         async with self.get_session() as session:
             result = await session.execute(text(query), params or {})
             await session.commit()
-            return list(result)
+            if result.returns_rows:  # type: ignore[attr-defined]
+                return list(result.mappings().all())
+            return []
 
     async def execute_one(
         self,
@@ -211,7 +214,9 @@ class DatabaseManager:
         async with self.get_session() as session:
             result = await session.execute(text(query), params or {})
             await session.commit()
-            return result.mappings().first()
+            if result.returns_rows:  # type: ignore[attr-defined]
+                return result.mappings().first()
+            return None
 
     # -- Engine access -------------------------------------------------------
 

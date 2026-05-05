@@ -95,17 +95,17 @@ class MetadataFilter:
                 params["filter_folder_pattern"] = f"{self._folder}%"
 
         if self._tags is not None and len(self._tags) > 0:
-            conditions.append("d.tags @> :filter_tags::jsonb")
+            conditions.append("d.tags @> CAST(:filter_tags AS jsonb)")
             import json
 
             params["filter_tags"] = json.dumps(self._tags, ensure_ascii=False)
 
         if self._date_from is not None:
-            conditions.append("d.updated_at >= :filter_date_from::timestamptz")
+            conditions.append("d.updated_at >= CAST(:filter_date_from AS timestamptz)")
             params["filter_date_from"] = self._date_from
 
         if self._date_to is not None:
-            conditions.append("d.updated_at <= :filter_date_to::timestamptz")
+            conditions.append("d.updated_at <= CAST(:filter_date_to AS timestamptz)")
             params["filter_date_to"] = self._date_to
 
         if self._extension is not None:

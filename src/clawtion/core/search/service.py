@@ -129,32 +129,37 @@ class SearchService:
         self, document_id: str, level: str = "file"
     ) -> list[dict[str, Any]]:
         """指定ドキュメントの全チャンクを順序通りに取得する。"""
-        query = """
-            SELECT
-                dc.chunk_id,
-                dc.document_id,
-                dc.content,
-                dc.content_with_context,
-                dc.chunk_level,
-                dc.chunk_index,
-                dc.chunk_total,
-                dc.heading_path,
-                dc.token_count,
-                dc.char_count,
-                d.file_path,
-                d.folder_path,
-                d.title
-            FROM document_chunks dc
-            JOIN documents d ON d.document_id = dc.document_id
-            WHERE dc.document_id = :document_id
-              AND (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
-            ORDER BY dc.chunk_index ASC
-        """
-        rows = await self._db.execute(
-            query,
-            {"document_id": document_id, "chunk_level": level},
-        )
-        return [dict(row._mapping) for row in rows]
+        if level:
+            query = """
+                SELECT
+                    dc.chunk_id, dc.document_id, dc.content,
+                    dc.content_with_context, dc.chunk_level,
+                    dc.chunk_index, dc.chunk_total, dc.heading_path,
+                    dc.token_count, dc.char_count,
+                    d.file_path, d.folder_path, d.title
+                FROM document_chunks dc
+                JOIN documents d ON d.document_id = dc.document_id
+                WHERE dc.document_id = :document_id
+                  AND dc.chunk_level = :chunk_level
+                ORDER BY dc.chunk_index ASC
+            """
+            params = {"document_id": document_id, "chunk_level": level}
+        else:
+            query = """
+                SELECT
+                    dc.chunk_id, dc.document_id, dc.content,
+                    dc.content_with_context, dc.chunk_level,
+                    dc.chunk_index, dc.chunk_total, dc.heading_path,
+                    dc.token_count, dc.char_count,
+                    d.file_path, d.folder_path, d.title
+                FROM document_chunks dc
+                JOIN documents d ON d.document_id = dc.document_id
+                WHERE dc.document_id = :document_id
+                ORDER BY dc.chunk_index ASC
+            """
+            params = {"document_id": document_id}
+        rows = await self._db.execute(query, params)
+        return [dict(row) for row in rows]
 
     async def get_neighbor_chunks(
         self, chunk_id: str, before: int = 1, after: int = 1
@@ -209,7 +214,7 @@ class SearchService:
                 "max_index": chunk_index + after,
             },
         )
-        return [dict(row._mapping) for row in rows]
+        return [dict(row) for row in rows]
 
     async def get_parent_chunk(self, chunk_id: str) -> dict[str, Any] | None:
         """指定チャンクの親チャンクを取得する（fine > coarse > file の階層）。

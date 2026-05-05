@@ -77,7 +77,7 @@ class KeywordSearch:
             JOIN documents d ON d.document_id = dc.document_id,
                  plainto_tsquery('simple', :query) query
             WHERE dc.tsvector @@ query
-              AND (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
+              AND (CAST(:chunk_level AS VARCHAR) IS NULL OR dc.chunk_level = :chunk_level_val)
               AND d.is_deleted = false
               {filter_clause}
             ORDER BY keyword_score DESC
@@ -87,6 +87,7 @@ class KeywordSearch:
         params: dict[str, Any] = {
             "query": query,
             "chunk_level": chunk_level,
+            "chunk_level_val": chunk_level,
             "top_k": top_k,
         }
         params.update(filter_params)
@@ -150,7 +151,7 @@ class KeywordSearch:
             JOIN documents d ON d.document_id = dc.document_id,
                  plainto_tsquery('simple', :query) query
             WHERE dc.tsvector @@ query
-              AND (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
+              AND (CAST(:chunk_level AS VARCHAR) IS NULL OR dc.chunk_level = :chunk_level_val)
               AND d.is_deleted = false
               {filter_clause}
             ORDER BY keyword_score DESC
@@ -160,6 +161,7 @@ class KeywordSearch:
         params: dict[str, Any] = {
             "query": query,
             "chunk_level": chunk_level,
+            "chunk_level_val": chunk_level,
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }

@@ -63,7 +63,7 @@ class QueueManager:
             resolved_doc_id = existing["document_id"] if existing else str(uuid.uuid4())
 
         queue_id = str(uuid.uuid4())
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         query = """
             INSERT INTO indexing_queue
@@ -97,7 +97,7 @@ class QueueManager:
         Returns:
             ジョブ情報の dict、ない場合は None
         """
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         # トランザクション内で SELECT ... FOR UPDATE SKIP LOCKED
         query = """
@@ -142,7 +142,7 @@ class QueueManager:
             status: 新しいステータス
             error: エラーメッセージ（失敗時の last_error）
         """
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         completed_at_part = ""
         params: dict[str, Any] = {
@@ -162,7 +162,7 @@ class QueueManager:
                 UPDATE indexing_queue
                 SET status = :status,
                     last_error = :error,
-                    error_history = COALESCE(error_history, '[]'::jsonb) || :error_history::jsonb,
+                    error_history = COALESCE(error_history, '[]'::jsonb) || CAST(:error_history AS jsonb),
                     retry_count = retry_count + 1{completed_at_part}
                 WHERE queue_id = :queue_id
             """
@@ -195,7 +195,7 @@ class QueueManager:
         progress_json = json.dumps(progress)
         query = """
             UPDATE indexing_queue
-            SET progress = :progress::jsonb,
+            SET progress = CAST(:progress AS jsonb),
                 status = CASE WHEN status = 'processing' THEN 'partial' ELSE status END
             WHERE queue_id = :queue_id
         """

@@ -98,14 +98,14 @@ class SemanticSearch:
                 d.file_path,
                 d.folder_path,
                 d.title,
-                dc.embedding <=> :query_embedding::vector AS distance,
-                1 - (dc.embedding <=> :query_embedding::vector) AS similarity_score
+                dc.embedding <=> CAST(:query_embedding AS vector) AS distance,
+                1 - (dc.embedding <=> CAST(:query_embedding AS vector)) AS similarity_score
             FROM document_chunks dc
             JOIN documents d ON d.document_id = dc.document_id
             WHERE (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
               AND d.is_deleted = false
               {filter_clause}
-            ORDER BY dc.embedding <=> :query_embedding::vector
+            ORDER BY dc.embedding <=> CAST(:query_embedding AS vector)
             LIMIT :top_k
         """
 
@@ -171,15 +171,15 @@ class SemanticSearch:
                 dc.chunk_id,
                 dc.document_id,
                 dc.chunk_level,
-                ROW_NUMBER() OVER (ORDER BY dc.embedding <=> :query_embedding::vector) AS rank,
-                1.0 / (:rrf_k + ROW_NUMBER() OVER (ORDER BY dc.embedding <=> :query_embedding::vector)) AS rrf_score_part,
-                dc.embedding <=> :query_embedding::vector AS distance
+                ROW_NUMBER() OVER (ORDER BY dc.embedding <=> CAST(:query_embedding AS vector)) AS rank,
+                1.0 / (:rrf_k + ROW_NUMBER() OVER (ORDER BY dc.embedding <=> CAST(:query_embedding AS vector))) AS rrf_score_part,
+                dc.embedding <=> CAST(:query_embedding AS vector) AS distance
             FROM document_chunks dc
             JOIN documents d ON d.document_id = dc.document_id
             WHERE (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
               AND d.is_deleted = false
               {filter_clause}
-            ORDER BY dc.embedding <=> :query_embedding::vector
+            ORDER BY dc.embedding <=> CAST(:query_embedding AS vector)
             LIMIT :top_k
         """
 

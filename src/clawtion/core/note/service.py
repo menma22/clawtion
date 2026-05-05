@@ -98,7 +98,7 @@ class NoteService:
             f.write(file_content)
 
         content_hash = hashlib.sha256(file_bytes).hexdigest()
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         # DB に挿入
         query = """
@@ -109,7 +109,7 @@ class NoteService:
             ) VALUES (
                 :document_id, :file_path, :folder_path, :title,
                 :file_extension, :file_size_bytes, :content_hash,
-                :tags::jsonb, :metadata::jsonb, :created_at, :created_at
+                CAST(:tags AS jsonb), CAST(:metadata AS jsonb), :created_at, :created_at
             )
         """
         await self._db.execute(
@@ -222,7 +222,7 @@ class NoteService:
             f.write(content)
 
         content_hash = hashlib.sha256(file_bytes).hexdigest()
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         # DB を更新
         await self._db.execute(
@@ -298,7 +298,7 @@ class NoteService:
             logger.info("Note permanently deleted", document_id=document_id)
         else:
             # 論理削除: ゴミ箱へ
-            now = datetime.now(UTC).isoformat()
+            now = datetime.now(UTC)
 
             # ファイル内容を保存
             file_content = ""
@@ -309,20 +309,19 @@ class NoteService:
             # trash テーブルに挿入
             from datetime import timedelta
 
-            purge_at = (
-                datetime.now(UTC) + timedelta(days=7)
-            ).isoformat()
+            purge_at = datetime.now(UTC) + timedelta(days=7)
 
             await self._db.execute(
                 """
                 INSERT INTO trash
-                    (original_document_id, original_file_path,
+                    (trash_id, original_document_id, original_file_path,
                      original_content, original_metadata, auto_purge_at)
                 VALUES
-                    (:document_id, :file_path,
-                     :content, :metadata::jsonb, :purge_at::timestamptz)
+                    (:trash_id, :document_id, :file_path,
+                     :content, CAST(:metadata AS jsonb), CAST(:purge_at AS timestamptz))
                 """,
                 {
+                    "trash_id": str(uuid.uuid4()),
                     "document_id": document_id,
                     "file_path": file_path,
                     "content": file_content,

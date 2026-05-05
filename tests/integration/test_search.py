@@ -62,7 +62,7 @@ class TestSearchIntegration:
                    VALUES (:chunk_id, :document_id, :chunk_level, :chunk_index,
                    :chunk_total, :content, :content_with_context, :content_hash,
                    :embedding_model, :embedding_dimensions, :token_count,
-                   :char_count, :embedding::vector)""",
+                   :char_count, CAST(:embedding AS vector))""",
                 c,
             )
 
@@ -142,8 +142,9 @@ class TestSearchIntegration:
         # Get all coarse chunks for the document
         rows = await db_manager.execute(
             """SELECT chunk_id FROM document_chunks
-               WHERE chunk_level = 'coarse' AND file_path_join = (
-                   SELECT file_path FROM documents WHERE file_path = 'notes/search_test.md'
+               WHERE chunk_level = 'coarse'
+               AND document_id = (
+                   SELECT document_id FROM documents WHERE file_path = 'notes/search_test.md'
                )""",
             {},
         )

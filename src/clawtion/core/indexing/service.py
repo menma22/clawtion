@@ -342,7 +342,7 @@ class IndexingService:
             return
 
         document_id = row["document_id"]
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         # ファイル内容を保存
         file_content = ""
@@ -364,7 +364,7 @@ class IndexingService:
                 (original_document_id, original_file_path,
                  original_content, original_metadata, auto_purge_at)
             VALUES
-                (:document_id, :file_path, :content, :metadata::jsonb, :purge_at::timestamptz)
+                (:document_id, :file_path, :content, CAST(:metadata AS jsonb), CAST(:purge_at AS timestamptz))
             """,
             {
                 "document_id": document_id,
@@ -650,7 +650,7 @@ class IndexingService:
         total_chunks: int,
     ) -> None:
         """ドキュメントレコードを UPSERT する。"""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
         has_file_level = total_chunks > 0
 
         await self._db.execute(
@@ -788,7 +788,7 @@ class IndexingService:
         is_reuse: bool,
     ) -> None:
         """チャンクレコードを DB に挿入する。"""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(UTC)
 
         embedding_json = None
         if embedding is not None:
@@ -811,8 +811,8 @@ class IndexingService:
                 ) VALUES (
                     :chunk_id, :document_id, :chunk_level, :chunk_index, :chunk_total,
                     :heading_path, :content, :content_with_context, :content_hash,
-                    :embedding::vector, :embedding_model, :embedding_dimensions,
-                    :token_count, :char_count, :metadata::jsonb, :created_at
+                    CAST(:embedding AS vector), :embedding_model, :embedding_dimensions,
+                    :token_count, :char_count, CAST(:metadata AS jsonb), :created_at
                 )
                 ON CONFLICT (chunk_id) DO UPDATE SET
                     content = EXCLUDED.content,

@@ -1,0 +1,191 @@
+{
+  "cli": {
+    "general": {
+      "version": "clawtion バージョン {version}",
+      "help_header": "clawtion - ローカル知識ベース with ベクトル検索",
+      "help_usage": "使用方法: clawtion [オプション] コマンド [引数]...",
+      "status_header": "clawtion ステータス",
+      "status_ok": "すべてのサービスが実行中です",
+      "status_stopped": "すべてのサービスが停止しています"
+    },
+    "init": {
+      "welcome": "clawtionへようこそ！",
+      "vault_prompt": "Vaultをどこに配置しますか？",
+      "vault_default": "デフォルト: {path}",
+      "vault_selected": "Vaultパス: {path}",
+      "api_key_prompt": "Gemini APIキーを入力してください:",
+      "api_key_saved": "APIキーを安全に保存しました。",
+      "docker_check": "Docker Desktopを確認中...",
+      "docker_ok": "Docker Desktopは実行中です。",
+      "docker_not_found": "Docker Desktopが見つかりません。先にDocker Desktopをインストールしてください。",
+      "db_starting": "データベースを起動中...",
+      "db_ready": "データベースの準備ができました。",
+      "migrating": "データベースマイグレーションを実行中...",
+      "migration_ok": "データベーススキーマは最新です。",
+      "claude_setup": "Claude Code統合を設定中...",
+      "claude_ok": "Claude Code統合を設定しました。",
+      "scanning": "Vault内の既存ノートをスキャン中...",
+      "scan_complete": "{count}件のファイルが見つかりました。",
+      "setup_complete": "clawtionの準備ができました！",
+      "try_message": "試してみよう: Claude Codeに「〜についてのノートを探して」と聞いてみてください"
+    },
+    "indexing": {
+      "starting": "Indexingワーカーを起動中...",
+      "stopping": "Indexingワーカーを停止中...",
+      "queue_status": "待機中: {pending}、処理中: {processing}、完了: {completed}",
+      "indexing_file": "インデックス処理中: {filename}",
+      "file_skipped": "スキップ（変更なし）: {filename}",
+      "file_failed": "失敗: {filename} - {error}",
+      "chunk_embedded": "チャンク埋め込み {current}/{total}: {filename}",
+      "complete": "{count}件のファイルを{duration}で処理しました",
+      "nothing_to_index": "インデックスするファイルがありません。",
+      "scanning_folder": "フォルダをスキャン中: {path}",
+      "reindex_confirm": "全{count}件のファイルを再インデックスします。続行しますか？",
+      "reindex_started": "全件再インデックスを開始しました。",
+      "batch_mode": "コスト効率のためBatch APIを使用して埋め込みを生成中。"
+    },
+    "search": {
+      "semantic": "セマンティック検索結果: {query}",
+      "keyword": "キーワード検索結果: {query}",
+      "hybrid": "ハイブリッド検索結果: {query}",
+      "no_results": "結果が見つかりませんでした。",
+      "result_item": "{score:.2f} [{file_path}] {heading}",
+      "result_detail": "  {content_preview}...",
+      "results_summary": "{count}件の結果 ({duration}ms)",
+      "folder_filter": "フォルダでフィルタ: {folder}",
+      "tags_filter": "タグでフィルタ: {tags}",
+      "extension_filter": "拡張子でフィルタ: {ext}"
+    },
+    "note": {
+      "created": "ノートを作成しました: {file_path}",
+      "deleted": "ノートをゴミ箱に移動しました: {file_path}",
+      "permanently_deleted": "ノートを完全に削除しました: {file_path}",
+      "restored": "ノートを復元しました: {file_path}",
+      "not_found": "ノートが見つかりません: {id}",
+      "list_empty": "ノートがありません。",
+      "list_header": "ノート一覧 ({count})",
+      "list_item": "{title} ({file_path}) - {updated}",
+      "folder_header": "フォルダ内のノート: {folder}",
+      "get_header": "{title}",
+      "get_meta": "{file_path} | {file_size} | 最終インデックス: {last_indexed}",
+      "tags_label": "タグ: {tags}"
+    },
+    "trash": {
+      "list_header": "ゴミ箱 ({count}件)",
+      "list_empty": "ゴミ箱は空です。",
+      "list_item": "{id}: {file_path}（削除日: {deleted_at}、自動削除: {purge_at}）",
+      "restored": "復元しました: {file_path}",
+      "emptied": "ゴミ箱を空にしました（{count}件を完全削除）。",
+      "purge_info": "アイテムは{days}日後に自動削除されます。",
+      "not_found": "ゴミ箱アイテムが見つかりません: {id}"
+    },
+    "queue": {
+      "status_header": "Indexingキューの状態",
+      "pending": "待機中: {count}",
+      "processing": "処理中: {count}",
+      "completed": "完了: {count}",
+      "failed": "失敗: {count}",
+      "partial": "一部完了: {count}",
+      "list_header": "キューアイテム",
+      "list_empty": "キューは空です。",
+      "list_item": "{id}: {file_path} ({operation}) - {status}",
+      "cleared_failed": "失敗ジョブ{count}件をクリアしました。",
+      "retrying": "ジョブをリトライ中: {id}",
+      "retry_submitted": "ジョブ{id}をリトライキューに追加しました。"
+    },
+    "service": {
+      "installing": "clawtionサービスをインストール中（{mode}モード）...",
+      "installed": "サービスをインストールしました（{mode}モード）。",
+      "uninstalling": "clawtionサービスをアンインストール中...",
+      "uninstalled": "サービスをアンインストールしました。",
+      "starting": "clawtionサービスを起動中...",
+      "stopping": "clawtionサービスを停止中...",
+      "mode_label": "サービスの動作モード: {mode}",
+      "status_running": "状態: 実行中",
+      "status_stopped": "状態: 停止中",
+      "mode_manual": "手動（CLIで起動/停止）",
+      "mode_scheduled": "スケジュール（毎時 + ログイン時）",
+      "mode_background": "常駐（常時実行）"
+    },
+    "doctor": {
+      "header": "clawtion 診断",
+      "separator": "================",
+      "docker": "Docker Desktop: {status}",
+      "db_connection": "DB接続: {status}",
+      "db_schema": "DBスキーマバージョン: {version}（{status}）",
+      "gemini_key": "Gemini APIキー: {status}",
+      "claude_config": "Claude Code設定: {status}",
+      "subagent": "Subagentインストール: {status}",
+      "skill": "Skillインストール: {status}",
+      "vault": "Vaultアクセス: {path}（{count}ファイル、{status}）",
+      "disk": "ディスク空き容量: {free}",
+      "queue_summary": "Indexingキュー: {pending}待機中、{failed}失敗",
+      "last_indexed": "最終成功インデックス: {time}",
+      "recent_errors": "最近のエラー（24時間）: {count}",
+      "overall": "総合判定: {verdict}",
+      "status_ok": "正常",
+      "status_warn": "注意",
+      "status_error": "異常"
+    },
+    "config": {
+      "current": "現在の設定:",
+      "getting": "{key} = {value}",
+      "setting": "{key} を {value} に設定しました",
+      "set_key_prompt": "新しい{key_name}APIキーを入力してください:",
+      "set_key_saved": "APIキーを保存しました。",
+      "set_key_deleted": "APIキーを削除しました。",
+      "editing": "設定ファイルをエディタで開いています...",
+      "key_not_found": "設定キーが見つかりません: {key}",
+      "invalid_value": "{key} に無効な値が設定されています: {value}"
+    },
+    "errors": {
+      "invalid_api_key": "APIキーが無効です。'clawtion config edit'で更新してください。",
+      "db_connection_failed": "データベースに接続できません。Dockerは起動していますか？ 'clawtion start'を試してみてください。",
+      "vault_not_found": "Vaultフォルダが見つかりません: {path}",
+      "file_not_found": "ファイルが見つかりません: {path}",
+      "permission_denied": "権限が拒否されました: {path}",
+      "unsupported_file_type": "未対応のファイル形式です: {extension}",
+      "indexing_queue_full": "Indexingキューがいっぱいです。現在のジョブの完了をお待ちください。",
+      "embedding_api_error": "Embedding APIエラー: {message}",
+      "api_rate_limited": "APIのレート制限に達しました。{seconds}秒後にリトライします。",
+      "api_quota_exceeded": "APIクォータを超えました。24時間後に自動的に再開します。",
+      "duplicate_file": "このパスには既にドキュメントが存在します: {path}",
+      "unexpected_error": "予期しないエラーが発生しました。ログで詳細を確認してください。"
+    }
+  },
+  "ui": {
+    "search": {
+      "placeholder": "ノートを検索...",
+      "no_results": "結果が見つかりません",
+      "results_count": "{count}件の結果",
+      "searching": "検索中...",
+      "error": "検索に失敗しました: {message}"
+    },
+    "status": {
+      "indexing": "インデックス処理中 {filename}（{current}/{total}）",
+      "indexing_idle": "変更を待機中...",
+      "queue_count": "キューに{count}件",
+      "connected": "接続済み",
+      "disconnected": "切断されました",
+      "last_sync": "最終同期: {time}"
+    },
+    "note": {
+      "new_note": "新規ノート",
+      "edit_note": "ノートを編集",
+      "delete_confirm": "このノートを削除してもよろしいですか？",
+      "permanent_delete_confirm": "このノートは完全に削除されます。続行しますか？",
+      "saved": "保存しました",
+      "unsaved_changes": "保存されていない変更があります。",
+      "title_placeholder": "ノートのタイトル..."
+    },
+    "settings": {
+      "title": "設定",
+      "language": "言語",
+      "vault_path": "Vaultパス",
+      "api_key": "APIキー",
+      "theme": "テーマ",
+      "save": "保存",
+      "cancel": "キャンセル"
+    }
+  }
+}

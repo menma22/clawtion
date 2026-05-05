@@ -81,8 +81,42 @@ main.add_command(config_cmd)
 
 
 # ---------------------------------------------------------------------------
-# mcp-serve and api-serve are registered here but defined in their
-# respective interface modules
+# logs command (simple log viewer)
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="logs")
+@click.option("--tail", default=50, type=int, help="Number of lines to show")
+@click.option("--level", default=None, help="Filter by level (DEBUG, INFO, WARN, ERROR)")
+@click.option("--file", default=None, help="Log file path (default: ~/.clawtion/logs/clawtion.log)")
+def logs_cmd(tail: int, level: str | None, file: str | None) -> None:
+    """View clawtion logs."""
+    from pathlib import Path
+
+    log_path = Path(file) if file else Path.home() / ".clawtion" / "logs" / "clawtion.log"
+
+    if not log_path.exists():
+        click.echo(click.style(f"  Log file not found: {log_path}", fg="yellow"))
+        click.echo("  Run 'clawtion start' to begin logging.")
+        return
+
+    lines = log_path.read_text(encoding="utf-8").strip().split("\n")
+    if level:
+        level_upper = level.upper()
+        lines = [ln for ln in lines if level_upper in ln]
+
+    for line in lines[-tail:]:
+        # Color-code by level
+        if "ERROR" in line or "error" in line:
+            click.echo(click.style(line, fg="red"))
+        elif "WARN" in line or "warn" in line:
+            click.echo(click.style(line, fg="yellow"))
+        else:
+            click.echo(line)
+
+
+# ---------------------------------------------------------------------------
+# mcp-serve and api-serve
 # ---------------------------------------------------------------------------
 
 

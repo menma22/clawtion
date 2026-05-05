@@ -14,7 +14,7 @@ import yaml
 from clawtion.config.loader import get_config, reload_config
 from clawtion.config.secrets import set_secret
 from clawtion.i18n.translator import t
-from clawtion.interfaces.cli.main import async_cmd
+from clawtion.utils.async_helpers import async_cmd
 
 _GLOBAL_CONFIG_DIR = Path.home() / ".clawtion"
 _GLOBAL_CONFIG_PATH = _GLOBAL_CONFIG_DIR / "config.yaml"

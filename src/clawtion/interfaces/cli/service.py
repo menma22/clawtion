@@ -13,7 +13,7 @@ import click
 
 from clawtion.config.loader import get_config
 from clawtion.i18n.translator import t
-from clawtion.interfaces.cli.main import async_cmd
+from clawtion.utils.async_helpers import async_cmd
 
 _SERVICE_NAME = "clawtion"
 _DB_URL_DEFAULT = "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion"

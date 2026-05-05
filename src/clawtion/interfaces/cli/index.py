@@ -10,7 +10,7 @@ import click
 from clawtion.config.loader import get_config
 from clawtion.config.secrets import get_secret
 from clawtion.i18n.translator import t
-from clawtion.interfaces.cli.main import async_cmd
+from clawtion.utils.async_helpers import async_cmd
 
 
 async def _get_services() -> dict[str, Any]:

@@ -9,9 +9,7 @@ Usage::
 
 from __future__ import annotations
 
-import asyncio
 import sys
-from typing import Any
 
 import click
 
@@ -28,73 +26,7 @@ from clawtion.interfaces.cli.note import note
 from clawtion.interfaces.cli.search import search
 from clawtion.interfaces.cli.service import service
 from clawtion.interfaces.cli.trash import trash
-
-# ---------------------------------------------------------------------------
-# Global options
-# ---------------------------------------------------------------------------
-
-_VERBOSE = False
-
-
-def set_verbose(val: bool) -> None:
-    """Set global verbose flag."""
-    global _VERBOSE
-    _VERBOSE = val
-
-
-def is_verbose() -> bool:
-    """Check if verbose mode is enabled."""
-    return _VERBOSE
-
-
-# ---------------------------------------------------------------------------
-# Async click helpers
-# ---------------------------------------------------------------------------
-
-
-def async_cmd(
-    async_func: Any,
-) -> Any:
-    """Decorator that wraps an async click command callback.
-
-    Usage::
-
-        @cli.command()
-        @click.pass_context
-        @async_cmd
-        async def my_command(ctx, ...):
-            ...
-    """
-
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        try:
-            asyncio.run(async_func(*args, **kwargs))
-        except KeyboardInterrupt:
-            click.echo()
-            click.echo(t("cli.general.cancel"))
-            sys.exit(130)
-        except Exception as exc:
-            if is_verbose():
-                import traceback
-                click.echo(
-                    click.style(t("cli.general.error", message=str(exc)), fg="red", bold=True),
-                    err=True,
-                )
-                click.echo(traceback.format_exc(), err=True)
-            else:
-                click.echo(
-                    click.style(t("cli.general.error", message=str(exc)), fg="red", bold=True),
-                    err=True,
-                )
-                click.echo(
-                    click.style("Use --verbose for details.", fg="yellow"),
-                    err=True,
-                )
-            sys.exit(1)
-
-    import functools
-    return functools.wraps(async_func)(wrapper)
-
+from clawtion.utils.async_helpers import async_cmd, set_verbose
 
 # ---------------------------------------------------------------------------
 # Main CLI group

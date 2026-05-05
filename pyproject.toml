@@ -87,6 +87,7 @@ module = [
     "clawtion.i18n.translator",
 ]
 ignore_missing_imports = true
+disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = [

@@ -14,7 +14,7 @@ import click
 
 from clawtion.config.secrets import get_secret, set_secret
 from clawtion.i18n.translator import t
-from clawtion.interfaces.cli.main import async_cmd
+from clawtion.utils.async_helpers import async_cmd
 
 DEFAULT_VAULT = os.path.expanduser("~/Documents/clawtion-vault")
 CLAUDE_CONFIG_DIR = Path.home() / ".claude"

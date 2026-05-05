@@ -114,6 +114,8 @@ module = [
     "clawtion.core.embedding.openai",
     "clawtion.core.embedding.ollama",
     "clawtion.core.namespace.service",
+    "clawtion.core.indexing.loaders",
+    "clawtion.core.graph.service",
     "clawtion.utils.language",
     "clawtion.core.indexing.chunker",
 ]

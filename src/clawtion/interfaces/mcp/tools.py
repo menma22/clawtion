@@ -612,6 +612,149 @@ def register_all_tools(server: Any) -> None:
             return _error_response("assign_to_namespace", str(exc))
 
 
+    # ==================================================================
+    # GraphRAG tools
+    # ==================================================================
+
+    @server.tool()
+    async def graph_search(
+        starting_entity: str,
+        max_hops: int = 2,
+        relation_types: str | None = None,
+    ) -> dict[str, Any]:
+        """Traverse the entity-relation graph from a starting entity.
+
+        Uses a recursive SQL CTE to discover entities and their relations
+        up to *max_hops* depth from the starting entity.  Results include
+        a full entity list, a relation list, and an adjacency structure.
+
+        Args:
+            starting_entity: Entity name or UUID to start traversal from.
+            max_hops: Maximum number of relation hops (default 2, max 10).
+            relation_types: Optional comma-separated list of relation types
+                to restrict traversal (e.g. ``"uses,mentions"``).
+
+        Returns:
+            A graph result with entities, relations, and adjacency data.
+        """
+        return await _graph_search_impl(
+            starting_entity=starting_entity,
+            max_hops=min(max_hops, 10),
+            relation_types=relation_types,
+        )
+
+    @server.tool()
+    async def get_related_chunks(
+        chunk_id: str,
+        max_hops: int = 1,
+    ) -> dict[str, Any]:
+        """Find chunks related to a given chunk via shared entities.
+
+        Traces the entity graph from entities mentioned in the specified
+        chunk, then discovers other chunks that reference the same entities.
+
+        Args:
+            chunk_id: The anchor chunk UUID.
+            max_hops: Entity graph traversal depth (default 1, max 5).
+
+        Returns:
+            A list of related chunks with entity context.
+        """
+        return await _get_related_chunks_impl(
+            chunk_id=chunk_id,
+            max_hops=min(max_hops, 5),
+        )
+
+    @server.tool()
+    async def extract_entities_from_chunk(
+        chunk_id: str,
+        store: bool = False,
+    ) -> dict[str, Any]:
+        """Extract entities from a document chunk using heuristic matching.
+
+        Uses regex patterns and a known-entity dictionary to identify
+        persons, organizations, technologies, and concepts in the chunk
+        text.  Optionally stores extracted entities and co-occurrence
+        relations in the graph database.
+
+        Args:
+            chunk_id: The chunk UUID to analyse.
+            store: If True, store extracted entities and relations in
+                the graph database (default False).
+
+        Returns:
+            Extracted entity list or stored entity/relation counts.
+        """
+        return await _extract_entities_from_chunk_impl(
+            chunk_id=chunk_id,
+            store=store,
+        )
+
+    # ==================================================================
+    # Note editing tools
+    # ==================================================================
+
+    @server.tool()
+    async def update_note_section(
+        document_id: str,
+        target_heading: str,
+        new_content: str,
+        match_context: str | None = None,
+    ) -> dict[str, Any]:
+        """Update a specific section of a note identified by a heading.
+
+        Locates the heading in the note file, replaces all content between
+        that heading and the next heading of equal or higher level, and
+        triggers re-indexing.
+
+        Args:
+            document_id: The document UUID of the note to edit.
+            target_heading: The heading text to target (without ``#``
+                prefix).  Matching is case-insensitive.
+            new_content: The new Markdown content for the section.
+            match_context: Optional text that must appear in the section
+                content to disambiguate when multiple headings match.
+
+        Returns:
+            Update result with section boundary info.
+        """
+        return await _update_note_section_mcp(
+            document_id=document_id,
+            target_heading=target_heading,
+            new_content=new_content,
+            match_context=match_context,
+        )
+
+    @server.tool()
+    async def append_to_note(
+        document_id: str,
+        content: str,
+        position: str = "end",
+        target_heading: str | None = None,
+    ) -> dict[str, Any]:
+        """Append content to a note at the end or relative to a heading.
+
+        Args:
+            document_id: The document UUID of the note to edit.
+            content: The Markdown content to append.
+            position: Where to insert. One of:
+                - ``"end"``: at the end of the file (default)
+                - ``"after_heading"``: immediately after the target heading's section
+                - ``"before_heading"``: immediately before the target heading
+            target_heading: Required when *position* is not ``"end"``.
+                The heading text to anchor the insertion.
+
+        Returns:
+            Append result with insertion line info.
+        """
+        return await _append_to_note_mcp(
+            document_id=document_id,
+            content=content,
+            position=position,
+            target_heading=target_heading,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
@@ -716,3 +859,177 @@ def _fmt_date(dt: Any) -> str:
     if isinstance(dt, str):
         return dt
     return str(dt)
+
+
+# ---------------------------------------------------------------------------
+# GraphRAG tools
+# ---------------------------------------------------------------------------
+
+
+async def _graph_search_impl(
+    starting_entity: str,
+    max_hops: int = 2,
+    relation_types: str | None = None,
+) -> dict[str, Any]:
+    """Implementation of graph_search — traverses entity-relation graph."""
+    from clawtion.interfaces.mcp.server import get_graph_service
+
+    try:
+        service = await get_graph_service()
+        rt_list = None
+        if relation_types:
+            rt_list = [t.strip() for t in relation_types.split(",")]
+        result = await service.graph_search(
+            starting_entity=starting_entity,
+            max_hops=max_hops,
+            relation_types=rt_list,
+        )
+        return _success_response(result)
+    except Exception as exc:
+        return _error_response("graph_search", str(exc))
+
+
+async def _get_related_chunks_impl(
+    chunk_id: str,
+    max_hops: int = 1,
+) -> dict[str, Any]:
+    """Implementation of get_related_chunks — find related chunks via entity graph."""
+    from clawtion.interfaces.mcp.server import get_graph_service
+
+    try:
+        service = await get_graph_service()
+        related = await service.find_related(
+            chunk_id=chunk_id,
+            max_hops=max_hops,
+        )
+        return _success_response({
+            "chunk_id": chunk_id,
+            "max_hops": max_hops,
+            "count": len(related),
+            "related_chunks": related,
+        })
+    except Exception as exc:
+        return _error_response("get_related_chunks", str(exc))
+
+
+async def _extract_entities_from_chunk_impl(
+    chunk_id: str,
+    store: bool = False,
+) -> dict[str, Any]:
+    """Extract entities from a document chunk. Optionally store in the graph."""
+    from clawtion.interfaces.mcp.server import get_graph_service
+
+    try:
+        service = await get_graph_service()
+        if store:
+            result = await service.extract_and_store(chunk_id)
+            return _success_response(result)
+        entities = await service.extract_entities(chunk_id)
+        return _success_response({
+            "chunk_id": chunk_id,
+            "count": len(entities),
+            "entities": entities,
+        })
+    except Exception as exc:
+        return _error_response("extract_entities_from_chunk", str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Note editing tools
+# ---------------------------------------------------------------------------
+
+
+async def _update_note_section_mcp(
+    document_id: str,
+    target_heading: str,
+    new_content: str,
+    match_context: str | None = None,
+) -> dict[str, Any]:
+    """Update a specific section of a note identified by heading."""
+    from clawtion.interfaces.mcp.server import get_note_editor, get_note_service
+
+    try:
+        # Resolve document_id to file_path
+        note_service = await get_note_service()
+        note_data = await note_service.get(document_id)
+        if not note_data:
+            return _success_response({
+                "found": False,
+                "document_id": document_id,
+                "note": None,
+            })
+        file_path = note_data["file_path"]
+
+        editor = await get_note_editor()
+        result = editor.update_section(
+            file_path=file_path,
+            target_heading=target_heading,
+            new_content=new_content,
+            match_context=match_context,
+        )
+        # Re-read the updated file content and trigger re-indexing
+        try:
+            import os
+            abs_path = os.path.join(editor._vault_path, file_path)
+            with open(abs_path, encoding="utf-8") as f:
+                updated_content = f.read()
+            await note_service.update(document_id, content=updated_content)
+        except Exception:
+            pass
+
+        return _success_response({
+            "document_id": document_id,
+            "file_path": file_path,
+            "target_heading": target_heading,
+            "section_update": result,
+        })
+    except Exception as exc:
+        return _error_response("update_note_section", str(exc))
+
+
+async def _append_to_note_mcp(
+    document_id: str,
+    content: str,
+    position: str = "end",
+    target_heading: str | None = None,
+) -> dict[str, Any]:
+    """Append content to a note at the end or after/before a specific heading."""
+    from clawtion.interfaces.mcp.server import get_note_editor, get_note_service
+
+    try:
+        note_service = await get_note_service()
+        note_data = await note_service.get(document_id)
+        if not note_data:
+            return _success_response({
+                "found": False,
+                "document_id": document_id,
+                "note": None,
+            })
+        file_path = note_data["file_path"]
+
+        editor = await get_note_editor()
+        result = editor.append_content(
+            file_path=file_path,
+            content=content,
+            position=position,
+            target_heading=target_heading,
+        )
+        # Re-read the updated file content and trigger re-indexing
+        try:
+            import os
+            abs_path = os.path.join(editor._vault_path, file_path)
+            with open(abs_path, encoding="utf-8") as f:
+                updated_content = f.read()
+            await note_service.update(document_id, content=updated_content)
+        except Exception:
+            pass
+
+        return _success_response({
+            "document_id": document_id,
+            "file_path": file_path,
+            "position": position,
+            "target_heading": target_heading,
+            "append_result": result,
+        })
+    except Exception as exc:
+        return _error_response("append_to_note", str(exc))

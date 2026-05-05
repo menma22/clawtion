@@ -211,10 +211,37 @@
   - `get_chunks(namespace_id)`: 名前空間内全チャンク取得
   - `NamespaceInfo` frozen dataclass（namespace_id, name, description, created_at, chunk_count）
 
+**コアGraphRAGサービス（Graph）:**
+- `core/graph/service.py`: エンティティ抽出・グラフ探索サービス
+  - `GraphService`（Constructor DI: DatabaseManager, EmbeddingClient）
+  - `extract_entities(chunk_id)`: ヒューリスティックエンティティ抽出（既知辞書 + 4種正規表現パターン）
+  - `add_entity(name, entity_type, description)`: エンティティ追加（重複時は既存ID返却、embedding自動生成）
+  - `add_relation(source_id, target_id, relation_type, weight, chunk_id)`: リレーション追加（重複防止）
+  - `graph_search(starting_entity, max_hops, relation_types)`: 再帰的SQL CTEによるNホップグラフ探索
+  - `find_related(chunk_id, max_hops)`: エンティティ共有に基づく関連チャンク検索
+  - `extract_and_store(chunk_id)`: 抽出→保存→共起関係生成の一括実行
+  - Entity + Relation 2テーブル構成、エンティティベクトルはembedding自動生成
+
+**コアノート編集サービス:**
+- `core/note/editor.py`: 見出しベースノート編集
+  - `NoteEditor`（Constructor DI: vault_path）
+  - `update_section(file_path, target_heading, new_content, match_context)`: 見出し指定セクション置換
+  - `append_content(file_path, content, position, target_heading)`: 3ポジション追記（end/after_heading/before_heading）
+  - `_find_heading_position()`: 正規表現によるMarkdown見出し検出 + match_context曖昧性解消
+
 **MCP名前空間ツール:**
 - `create_namespace(name, description)`: 名前空間作成
 - `list_namespaces()`: 名前空間一覧
 - `assign_to_namespace(document_id, namespace_id)`: ドキュメント → 名前空間割り当て
+
+**MCP GraphRAGツール（Phase 2）:**
+- `graph_search(starting_entity, max_hops=2, relation_types=None)`: エンティティグラフのNホップ探索（再帰的SQL CTE）
+- `get_related_chunks(chunk_id, max_hops=1)`: エンティティ共有に基づく関連チャンク検索
+- `extract_entities_from_chunk(chunk_id, store=False)`: チャンクからのエンティティ抽出（store=TrueでDB保存＋共起関係生成）
+
+**MCPノート編集ツール（Phase 2）:**
+- `update_note_section(document_id, target_heading, new_content, match_context=None)`: 見出し指定によるセクション内容の置換
+- `append_to_note(document_id, content, position="end", target_heading=None)`: ノート末尾/見出し前後へのコンテンツ追記
 
 **CLI名前空間コマンド:**
 - `clawtion namespace create <name> [--description]`: 名前空間作成
@@ -238,6 +265,10 @@
   - namespacesテーブル（UUID PK, name VARCHAR(100) UNIQUE, description TEXT, created_at）
   - document_chunksにnamespace_id UUID FK追加（ON DELETE SET NULL）
   - idx_chunks_namespace インデックス追加
+- `alembic/versions/003_graph_rag.py`: GraphRAG エンティティ・リレーションテーブル追加
+  - entitiesテーブル（entity_id UUID PK, name VARCHAR(200), entity_type VARCHAR(50), description TEXT, embedding vector(768), created_at, UNIQUE(name, entity_type))
+  - relationsテーブル（relation_id UUID PK, source_entity_id UUID FK→entities CASCADE, target_entity_id UUID FK→entities CASCADE, relation_type VARCHAR(100), weight FLOAT DEFAULT 1.0, source_chunk_id UUID FK→document_chunks SET NULL, created_at）
+  - インデックス: HNSW on entities.embedding, B-tree各種 on relations
 
 ### 3. 詳細アーキテクチャ
 
@@ -295,7 +326,9 @@ clawtion/
 │   │   │   ├── client.py                 # EmbeddingClient Protocol + EmbeddingResult
 │   │   │   ├── gemini.py                 # GeminiEmbeddingClient実装
 │   │   │   └── batch.py                  # Batch API対応
-│   │   ├── indexing/
+│   │   ├── graph/
+   │   │   └── service.py               # GraphRAGサービス（entity抽出、graph traversal CTE）
+   │   ├── indexing/
 │   │   │   ├── chunker.py                # 3粒度チャンキング（file/coarse/fine）
 │   │   │   ├── queue.py                  # キュー管理（FOR UPDATE SKIP LOCKED）
 │   │   │   ├── watcher.py                # watchdogファイル監視
@@ -311,6 +344,8 @@ clawtion/
 │   │   │   ├── __init__.py                 # パッケージ定義
 │   │   │   └── service.py                 # 名前空間管理（CRUD + 代入 + 検索フィルタ）
 │   │   ├── note/
+│   │   │   ├── __init__.py                  # パッケージ定義
+│   │   │   ├── editor.py                    # NoteEditor（見出しベースセクション編集・追記）
 │   │   │   └── service.py                # ノートCRUD（ファイルI/O + DB同期）
 │   │   └── trash/
 │   │       └── service.py                # ゴミ箱管理（復元/パージ）
@@ -348,6 +383,7 @@ clawtion/
 | i18n/translator.py | (標準ライブラリのみ) |
 | alembic/env.py | clawtion.core.db.models, sqlalchemy[asyncio], alembic |
 | alembic/001_initial_schema.py | pgvector.sqlalchemy, alembic |
+| alembic/003_graph_rag.py | pgvector.sqlalchemy, alembic |
 | core/db/connection.py | sqlalchemy[asyncio], asyncpg |
 | core/embedding/client.py | typing.Protocol (標準ライブラリ) |
 | core/embedding/gemini.py | core/embedding/client.py, google-genai |
@@ -361,7 +397,9 @@ clawtion/
 | core/search/keyword.py | core/db/connection.py, utils/logging.py, search/filter.py |
 | core/search/hybrid.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/filter.py |
 | core/search/service.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/hybrid.py, search/filter.py |
+| core/graph/service.py | core/db/connection.py, core/embedding/client.py, utils/exceptions.py, utils/logging.py |
 | core/note/service.py | core/db/connection.py, core/indexing/service.py, utils/exceptions.py, utils/logging.py |
+| core/note/editor.py | utils/exceptions.py, utils/logging.py |
 | core/namespace/service.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
 | core/trash/service.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
 | interfaces/api/app.py | fastapi, uvicorn, pydantic, core/db/connection.py, core/embedding/gemini.py, core/search/service.py, core/note/service.py, core/trash/service.py, core/indexing/queue.py |
@@ -376,6 +414,25 @@ clawtion/
 ---
 
 ## PART 2: BEST PRACTICES & DESIGN EVOLUTION
+
+### GraphRAGエンティティグラフ（Phase 2）
+
+- **Subject:** エンティティ抽出のヒューリスティック手法
+  - **(a) Original Design:** エンティティ抽出にLLM（Claude Haiku）を使用する計画だった
+  - **(b) Change & Rationale:** LLM依存はレイテンシ・コスト・外部依存の3点で問題がある。Phase 2ではキーワード/正規表現ベースのヒューリスティック抽出を実装。既知エンティティ辞書 + 人物名/組織名/技術名/概念パターンの4種の正規表現でカバレッジを確保。LLM抽出はPhase 3でopt-in機能として追加予定
+  - **(c) Adopted Best Practice:** `extract_entities()` は純粋な文字列処理（regex + 辞書引き）。DBアクセスはエンティティの内容取得のみ。`extract_and_store()` コンビニエンスメソッドで抽出→保存→共起関係生成を1コールで実行可能
+
+- **Subject:** グラフ探索の再帰的CTE方式
+  - **(a) Original Design:** NetworkX等のインメモリグラフライブラリで探索する計画だった
+  - **(b) Change & Rationale:** 全エンティティをメモリにロードするのは大規模Vaultで非効率。PostgreSQLの `WITH RECURSIVE` CTEを使用することで、DB内部でNホップ探索を完結させ、必要最小限のデータのみ転送。relation_typeフィルタもCTE内で適用可能
+  - **(c) Adopted Best Practice:** SQL再帰CTEでグラフ探索。Anchorメンバで開始エンティティからの最初のホップ、Recursiveメンバで `gt.hop < max_hops` の条件で反復。結果はentities一覧、relations一覧、adjacency listの3構造で返却
+
+### ノート編集機能（Phase 2）
+
+- **Subject:** 見出しベースセクション編集
+  - **(a) Original Design:** 既存のNoteService.update()はファイル全体の置換のみをサポート
+  - **(b) Change & Rationale:** Claude Codeからノートの一部を編集するユースケースでは、ファイル全体の読み書きよりセクション単位の手術的編集が必要。NoteEditorをNoteServiceとは別の責務（ファイル操作特化）として分離。NoteServiceはメタデータ管理＋インデキシングトリガー、NoteEditorはファイルコンテンツ操作を担当
+  - **(c) Adopted Best Practice:** NoteEditorはファイルシステムに直接アクセスし、見出し位置を正規表現で検出。`update_section()` は対象見出しから同レベル以上の次見出しまでを置換範囲とする標準Markdownセクション定義に準拠。`append_content()` は末尾/見出し前/見出し後の3ポジションをサポート
 
 ### 設計原則（Phase 0 確立）
 
@@ -433,7 +490,7 @@ clawtion/
 
 ## PART 3: PROJECT MANAGEMENT
 
-### 現在のフェーズ: Phase 2 進行中（名前空間サポート実装完了）
+### 現在のフェーズ: Phase 2 進行中（GraphRAG + ノート編集 実装完了）
 
 **完了タスク:**
 - [x] プロジェクト構造の確立（src/clawtion/ パッケージ構成）
@@ -470,13 +527,27 @@ clawtion/
   - [x] Alembicマイグレーション002追加
   - [x] i18n翻訳キー追加
 
+**完了タスク:**
+- [x] **Phase 2: GraphRAGエンティティグラフ**
+  - [x] Entity SQLAlchemyモデル（entitiesテーブル: entity_id, name, entity_type, description, embedding, created_at + UNIQUE(name, entity_type)）
+  - [x] Relation SQLAlchemyモデル（relationsテーブル: relation_id, source_entity_id FK, target_entity_id FK, relation_type, weight, source_chunk_id FK, created_at）
+  - [x] GraphService（extract_entities, add_entity, add_relation, graph_search, find_related, extract_and_store）
+  - [x] ヒューリスティックエンティティ抽出（既知辞書 + 正規表現パターン4種）
+  - [x] 再帰的SQL CTEによるNホップグラフ探索
+  - [x] エンティティベクトル検索用embedding自動生成
+  - [x] MCPツール: graph_search / get_related_chunks / extract_entities_from_chunk
+  - [x] Alembicマイグレーション003追加
+- [x] **Phase 2: ノート編集機能**
+  - [x] NoteEditor（update_section, append_content, _find_heading_position）
+  - [x] 見出しベースセクション置換（Markdown見出しレベル認識）
+  - [x] 複数見出し一致時のmatch_contextによる曖昧性解消
+  - [x] 3ポジション追記（end / after_heading / before_heading）
+  - [x] MCPツール: update_note_section / append_to_note
+  - [x] MCPサーバー: get_graph_service / get_note_editor ファクトリ追加
+
 **未完了（次のアクション）:**
-- [ ] コアDBレイヤー（connection.py, DatabaseManager実装）
-- [ ] EmbeddingClient（Gemini Embedding 2統合）
-- [ ] IndexingService（チャンカー、ファイル監視、キュー管理）
-- [ ] SearchService（セマンティック、キーワード、ハイブリッド検索）
-- [ ] NoteService（CRUD、ゴミ箱）
-- [ ] TrashService（ゴミ箱操作）
-- [ ] CLIインターフェース（Clickコマンド）
-- [ ] MCPサーバー（MCPプロトコル実装）
-- [ ] Test実装（単体テスト + 統合テスト）
+- [ ] CLIインターフェース（Clickコマンド）のGraphRAG/NoteEditing対応
+- [ ] REST API（FastAPI）のGraphRAG/NoteEditingエンドポイント追加
+- [ ] Phase 3: LLMベースエンティティ抽出（Claude Haiku統合）
+- [ ] Phase 3: コンテキスト検索（Contextual Retrieval）
+- [ ] E2Eテスト：GraphRAGグラフ探索・ノート編集シナリオ

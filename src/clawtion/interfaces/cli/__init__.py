@@ -5,6 +5,7 @@ Entry point: ``clawtion.interfaces.cli.main:main``
 
 from clawtion.interfaces.cli.config import config_cmd
 from clawtion.interfaces.cli.doctor import doctor
+from clawtion.interfaces.cli.git_cmd import git as git_group
 from clawtion.interfaces.cli.index import index
 from clawtion.interfaces.cli.init import init
 from clawtion.interfaces.cli.main import main
@@ -18,6 +19,7 @@ __all__ = [
     "async_cmd",
     "config_cmd",
     "doctor",
+    "git_group",
     "index",
     "init",
     "is_verbose",

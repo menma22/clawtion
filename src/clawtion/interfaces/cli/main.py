@@ -16,6 +16,7 @@ import click
 from clawtion.i18n.translator import t
 from clawtion.interfaces.cli.config import config_cmd
 from clawtion.interfaces.cli.doctor import doctor
+from clawtion.interfaces.cli.git_cmd import git as git_group
 from clawtion.interfaces.cli.index import index
 
 # ---------------------------------------------------------------------------
@@ -80,6 +81,7 @@ main.add_command(trash)
 main.add_command(doctor)
 main.add_command(config_cmd)
 main.add_command(namespace_group)
+main.add_command(git_group)
 
 
 # ---------------------------------------------------------------------------

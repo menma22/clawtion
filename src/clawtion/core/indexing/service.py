@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 
     from .queue import QueueManager
 
+
 logger = get_logger(__name__)
 
 # サポートするファイル拡張子
@@ -85,7 +86,41 @@ class IndexingService:
         self._queue = queue
         self._vault_path = vault_path
         self._config = config or get_config()
-        self._file_processors: list[FileProcessor] = [_TextFileProcessor()]
+        # コアプロセッサー（常に利用可能）
+        self._file_processors: list[FileProcessor] = []
+
+        # 構造化フォーマット用プロセッサー（テキストフォールバックより優先）
+        from .loaders import (
+            _DOCX_AVAILABLE,
+            _EBOOKLIB_AVAILABLE,
+            CSVProcessor,
+            HTMLProcessor,
+            JSONProcessor,
+        )
+
+        self._file_processors.append(HTMLProcessor())
+        self._file_processors.append(CSVProcessor())
+        self._file_processors.append(JSONProcessor())
+
+        # オプションのプロセッサー（必要なライブラリがインストールされている場合のみ）
+        if _EBOOKLIB_AVAILABLE:
+            from .loaders import EPUBProcessor
+
+            self._file_processors.append(EPUBProcessor())
+            logger.info("EPUBProcessor registered (ebooklib available)")
+        else:
+            logger.debug("EPUBProcessor not available (ebooklib not installed)")
+
+        if _DOCX_AVAILABLE:
+            from .loaders import DocxProcessor
+
+            self._file_processors.append(DocxProcessor())
+            logger.info("DocxProcessor registered (python-docx available)")
+        else:
+            logger.debug("DocxProcessor not available (python-docx not installed)")
+
+        # 汎用テキストプロセッサー（最後のフォールバック）
+        self._file_processors.append(_TextFileProcessor())
 
     # ---- パブリック API ----
 

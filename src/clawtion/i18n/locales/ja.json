@@ -70,6 +70,21 @@
       "reindex_started": "全件再インデックスを開始しました。",
       "batch_mode": "コスト効率のためBatch APIを使用して埋め込みを生成中。"
     },
+    "git": {
+      "cloning": "リポジトリをクローン中: {repo}",
+      "add_complete": "Gitリポジトリから{indexed}ファイルをインデックスしました（{skipped}件スキップ）→ {path}",
+      "errors_header": "インデックス中のエラー:",
+      "updating": "更新中: {name}",
+      "updating_all": "全{count}件のインデックス済みリポジトリを更新中...",
+      "update_ok": "{indexed}ファイルをインデックスしました（{skipped}件スキップ）",
+      "no_repos": "まだクローンされたリポジトリはありません。",
+      "list_header": "クローン済みGitリポジトリ（{count}件）",
+      "remote_label": "リモート",
+      "branch_label": "ブランチ",
+      "path_label": "パス",
+      "removing": "リポジトリを削除中: {name}",
+      "remove_ok": "リポジトリを削除しました。"
+    },
     "search": {
       "semantic": "セマンティック検索結果: {query}",
       "keyword": "キーワード検索結果: {query}",

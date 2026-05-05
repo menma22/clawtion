@@ -70,6 +70,21 @@
       "reindex_started": "Full re-index started.",
       "batch_mode": "Using Batch API for cost-efficient embedding."
     },
+    "git": {
+      "cloning": "Cloning repository: {repo}",
+      "add_complete": "Indexed {indexed} files (skipped {skipped}) from Git repo at {path}",
+      "errors_header": "Errors during indexing:",
+      "updating": "Updating: {name}",
+      "updating_all": "Updating all {count} indexed repositories...",
+      "update_ok": "Indexed {indexed} files (skipped {skipped})",
+      "no_repos": "No repositories cloned yet.",
+      "list_header": "Cloned Git Repositories ({count})",
+      "remote_label": "Remote",
+      "branch_label": "Branch",
+      "path_label": "Path",
+      "removing": "Removing repository: {name}",
+      "remove_ok": "Repository removed successfully."
+    },
     "search": {
       "semantic": "Semantic search results for: {query}",
       "keyword": "Keyword search results for: {query}",

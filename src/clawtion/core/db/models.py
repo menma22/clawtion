@@ -16,6 +16,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -24,6 +25,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.sql import func
 
 
@@ -383,3 +385,144 @@ class VaultSettings(Base):
 
     def __repr__(self) -> str:
         return f"<VaultSettings key={self.key!r}>"
+
+
+class Entity(Base):
+    """A named entity extracted from documents for GraphRAG traversal.
+
+    Each row represents a single entity (person, place, concept, etc.)
+    identified within the knowledge base.  The ``embedding`` column stores
+    the semantic vector for similarity-based entity matching.
+    """
+
+    __tablename__ = "entities"
+
+    entity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    embedding: Mapped[Any] = mapped_column(Vector(768), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    # -- Constraints -------------------------------------------------------
+    __table_args__ = (
+        UniqueConstraint("name", "entity_type", name="uq_entity_name_type"),
+    )
+
+    # -- Relationships -----------------------------------------------------
+    source_relations: Mapped[list[Relation]] = relationship(
+        "Relation",
+        back_populates="source_entity",
+        foreign_keys="Relation.source_entity_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    target_relations: Mapped[list[Relation]] = relationship(
+        "Relation",
+        back_populates="target_entity",
+        foreign_keys="Relation.target_entity_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    def __repr__(self) -> str:
+        return f"<Entity id={self.entity_id} name={self.name!r} type={self.entity_type!r}>"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "entity_id": str(self.entity_id),
+            "name": self.name,
+            "entity_type": self.entity_type,
+            "description": self.description,
+            "created_at": (
+                self.created_at.isoformat()
+                if hasattr(self.created_at, "isoformat")
+                else str(self.created_at)
+            ),
+        }
+
+
+class Relation(Base):
+    """A directed, typed relationship between two entities.
+
+    Each row links a source entity to a target entity with a semantic
+    relation type and an optional weight.  The ``source_chunk_id`` ties
+    the relation back to the document chunk where it was observed.
+    """
+
+    __tablename__ = "relations"
+
+    relation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    source_entity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("entities.entity_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    target_entity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("entities.entity_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    relation_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    weight: Mapped[float] = mapped_column(
+        Float, default=1.0, nullable=False, server_default="1.0",
+    )
+    source_chunk_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("document_chunks.chunk_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    # -- Relationships -----------------------------------------------------
+    source_entity: Mapped[Entity] = relationship(
+        "Entity",
+        back_populates="source_relations",
+        foreign_keys=[source_entity_id],
+    )
+    target_entity: Mapped[Entity] = relationship(
+        "Entity",
+        back_populates="target_relations",
+        foreign_keys=[target_entity_id],
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<Relation id={self.relation_id} "
+            f"{self.source_entity_id} --[{self.relation_type}]--> "
+            f"{self.target_entity_id} w={self.weight}>"
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "relation_id": str(self.relation_id),
+            "source_entity_id": str(self.source_entity_id),
+            "target_entity_id": str(self.target_entity_id),
+            "relation_type": self.relation_type,
+            "weight": self.weight,
+            "source_chunk_id": str(self.source_chunk_id) if self.source_chunk_id else None,
+            "created_at": (
+                self.created_at.isoformat()
+                if hasattr(self.created_at, "isoformat")
+                else str(self.created_at)
+            ),
+        }

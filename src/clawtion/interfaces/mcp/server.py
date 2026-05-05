@@ -108,6 +108,26 @@ async def get_note_service() -> Any:
     return NoteService(db=db, vault_path=vault_path, indexing_service=indexing_service)
 
 
+async def get_graph_service() -> Any:
+    """Return a singleton GraphService."""
+    from clawtion.core.graph.service import GraphService
+
+    db = await get_db()
+    embedder = await get_embedder()
+    return GraphService(db=db, embedder=embedder)
+
+
+async def get_note_editor() -> Any:
+    """Return a singleton NoteEditor."""
+    from clawtion.core.note.editor import NoteEditor
+
+    cfg = get_config_cached()
+    vault_path = os.path.expandvars(
+        os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault"))
+    )
+    return NoteEditor(vault_path=vault_path)
+
+
 # ---------------------------------------------------------------------------
 # MCP Server
 # ---------------------------------------------------------------------------

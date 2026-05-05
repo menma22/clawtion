@@ -1,0 +1,184 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-active: #1d4ed8;
+  --color-primary-subtle: #eff6ff;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-success: #22c55e;
+  --color-success-subtle: #f0fdf4;
+  --color-warning: #f59e0b;
+  --color-warning-subtle: #fffbeb;
+
+  --color-surface-app: #ffffff;
+  --color-surface-sidebar: #f8fafc;
+  --color-surface-card: #ffffff;
+  --color-surface-input: #f1f5f9;
+  --color-surface-hover: #f8fafc;
+
+  --color-border-default: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  --spacing-sidebar: 260px;
+  --spacing-statusbar: 32px;
+
+  --radius-df: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode */
+[data-theme='dark'] {
+  --color-surface-app: #0f172a;
+  --color-surface-sidebar: #1e293b;
+  --color-surface-card: #1e293b;
+  --color-surface-input: #334155;
+  --color-surface-hover: #1e293b;
+  --color-border-default: #334155;
+  --color-border-subtle: #1e293b;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+}
+
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background: var(--color-surface-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Selection */
+::selection {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--color-text-primary);
+}
+
+/* ProseMirror / TipTap editor styles */
+.ProseMirror {
+  outline: none;
+  min-height: 300px;
+  padding: 16px;
+  font-size: 16px;
+  line-height: 1.8;
+}
+.ProseMirror h1 { font-size: 30px; font-weight: 700; margin: 24px 0 16px; }
+.ProseMirror h2 { font-size: 24px; font-weight: 700; margin: 20px 0 12px; }
+.ProseMirror h3 { font-size: 20px; font-weight: 600; margin: 16px 0 8px; }
+.ProseMirror p { margin: 8px 0; }
+.ProseMirror code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--color-surface-input);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.ProseMirror pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: var(--radius-df);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.ProseMirror blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 16px;
+  margin: 16px 0;
+  color: var(--color-text-secondary);
+}
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 24px;
+}
+.ProseMirror img {
+  max-width: 100%;
+  border-radius: var(--radius-df);
+}
+.ProseMirror a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+.ProseMirror th, .ProseMirror td {
+  border: 1px solid var(--color-border-default);
+  padding: 8px 12px;
+  text-align: left;
+}
+.ProseMirror th {
+  background: var(--color-surface-input);
+  font-weight: 600;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

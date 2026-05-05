@@ -112,12 +112,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from clawtion.core.note.service import NoteService
     from clawtion.core.search.service import SearchService
     from clawtion.core.trash.service import TrashService
-    from clawtion.indexing.queue import QueueManager
+    from clawtion.core.indexing.queue import QueueManager
+    from clawtion.core.indexing.service import IndexingService
+
+    queue_manager = QueueManager(db)
+    indexing_service = IndexingService(
+        db=db,
+        embedder=embedder,
+        queue=queue_manager,
+        vault_path=vault_path,
+    ) if embedder else None
 
     search_service = SearchService(db, embedder)
-    note_service = NoteService(db, vault_path, indexing_service=None)
+    note_service = NoteService(db, vault_path, indexing_service=indexing_service)
     trash_service = TrashService(db, vault_path)
-    queue_manager = QueueManager(db)
 
     app.state.db = db
     app.state.vault_path = vault_path

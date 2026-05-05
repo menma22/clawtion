@@ -46,7 +46,7 @@ class NoteService:
         self,
         db: DatabaseManager,
         vault_path: str,
-        indexing_service: IndexingService,
+        indexing_service: IndexingService | None = None,
     ) -> None:
         self._db = db
         self._vault_path = vault_path
@@ -129,14 +129,15 @@ class NoteService:
         )
 
         # 自動 indexing をトリガー
-        try:
-            await self._indexing.index_file(abs_path)
-        except Exception as e:
-            logger.warning(
-                "Note created but indexing failed",
-                document_id=document_id,
-                error=str(e),
-            )
+        if self._indexing:
+            try:
+                await self._indexing.index_file(abs_path)
+            except Exception as e:
+                logger.warning(
+                    "Note created but indexing failed",
+                    document_id=document_id,
+                    error=str(e),
+                )
 
         logger.info("Note created", document_id=document_id, title=title, folder=folder)
         return {
@@ -200,12 +201,19 @@ class NoteService:
             ),
         }
 
-    async def update(self, document_id: str, content: str) -> dict[str, Any]:
+    async def update(
+        self,
+        document_id: str,
+        content: str,
+        title: str | None = None,
+        folder: str | None = None,
+        tags: list[str] | None = None,
+    ) -> dict[str, Any]:
         """ノートの内容を更新する。"""
         # 現在のドキュメント情報を取得
         row = await self._db.execute_one(
             """
-            SELECT file_path, title FROM documents
+            SELECT file_path, title, folder_path, tags FROM documents
             WHERE document_id = :document_id AND is_deleted = false
             """,
             {"document_id": document_id},
@@ -215,11 +223,34 @@ class NoteService:
 
         file_path = row["file_path"]
         abs_path = os.path.join(self._vault_path, file_path)
+        current_title = row["title"]
+        current_folder_path = row["folder_path"]
+        current_tags = row["tags"] if isinstance(row["tags"], list) else json.loads(row.get("tags") or "[]")
 
-        # ファイルを更新
-        file_bytes = content.encode("utf-8")
+        new_title = title if title is not None else current_title
+        new_folder = folder if folder is not None else (current_folder_path.rstrip("/") if current_folder_path else "")
+        new_tags = tags if tags is not None else current_tags
+
+        # ファイルパスの変更（タイトルまたはフォルダ変更時）
+        new_file_path = file_path
+        if title is not None or folder is not None:
+            sanitized_title = self._sanitize_filename(new_title)
+            new_folder_part = f"{new_folder}/" if new_folder else ""
+            new_file_path = os.path.join(new_folder_part, f"{sanitized_title}.md") if new_folder_part else f"{sanitized_title}.md"
+
+            # ファイルを移動
+            new_abs_path = os.path.join(self._vault_path, new_file_path)
+            if new_abs_path != abs_path:
+                os.makedirs(os.path.dirname(new_abs_path), exist_ok=True)
+                if os.path.exists(abs_path):
+                    os.rename(abs_path, new_abs_path)
+                abs_path = new_abs_path
+
+        # ファイル内容を更新（frontmatter付き）
+        file_content = self._build_note_content(content, tags=new_tags)
+        file_bytes = file_content.encode("utf-8")
         with open(abs_path, "w", encoding="utf-8") as f:
-            f.write(content)
+            f.write(file_content)
 
         content_hash = hashlib.sha256(file_bytes).hexdigest()
         now = datetime.now(UTC)
@@ -230,6 +261,10 @@ class NoteService:
             UPDATE documents
             SET content_hash = :content_hash,
                 file_size_bytes = :file_size_bytes,
+                title = :title,
+                file_path = :file_path,
+                folder_path = :folder_path,
+                tags = CAST(:tags AS jsonb),
                 updated_at = :now
             WHERE document_id = :document_id
             """,
@@ -237,25 +272,30 @@ class NoteService:
                 "document_id": document_id,
                 "content_hash": content_hash,
                 "file_size_bytes": len(file_bytes),
+                "title": new_title,
+                "file_path": new_file_path,
+                "folder_path": f"{new_folder}/" if new_folder else "",
+                "tags": json.dumps(new_tags, ensure_ascii=False),
                 "now": now,
             },
         )
 
         # 自動再 indexing
-        try:
-            await self._indexing.reindex_file(abs_path)
-        except Exception as e:
-            logger.warning(
-                "Note updated but indexing failed",
-                document_id=document_id,
-                error=str(e),
-            )
+        if self._indexing:
+            try:
+                await self._indexing.reindex_file(abs_path)
+            except Exception as e:
+                logger.warning(
+                    "Note updated but indexing failed",
+                    document_id=document_id,
+                    error=str(e),
+                )
 
         logger.info("Note updated", document_id=document_id)
         return {
             "document_id": document_id,
-            "file_path": file_path,
-            "title": row["title"],
+            "file_path": new_file_path,
+            "title": new_title,
             "content_hash": content_hash,
         }
 

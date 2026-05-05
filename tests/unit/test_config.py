@@ -5,7 +5,7 @@ import os
 import pytest
 
 from clawtion.config.defaults import DEFAULT_CONFIG
-from clawtion.config.loader import get_config, reload_config, _merge_dicts
+from clawtion.config.loader import get_config, reload_config, _deep_merge
 
 
 class TestDefaults:
@@ -39,29 +39,29 @@ class TestDefaults:
         assert DEFAULT_CONFIG["service"]["mode"] == "manual"
 
 
-class TestMergeDicts:
+class TestDeepMerge:
     def test_shallow_merge(self) -> None:
         base = {"a": 1, "b": 2}
         override = {"b": 3, "c": 4}
-        result = _merge_dicts(base, override)
+        result = _deep_merge(base, override)
         assert result == {"a": 1, "b": 3, "c": 4}
 
     def test_nested_merge(self) -> None:
         base = {"a": {"x": 1, "y": 2}, "b": 3}
         override = {"a": {"y": 20, "z": 30}}
-        result = _merge_dicts(base, override)
+        result = _deep_merge(base, override)
         assert result["a"] == {"x": 1, "y": 20, "z": 30}
         assert result["b"] == 3
 
     def test_override_not_dict_does_not_merge(self) -> None:
         base = {"a": {"x": 1}}
         override = {"a": "string_value"}
-        result = _merge_dicts(base, override)
+        result = _deep_merge(base, override)
         assert result["a"] == "string_value"
 
     def test_empty_override(self) -> None:
         base = {"a": 1}
-        result = _merge_dicts(base, {})
+        result = _deep_merge(base, {})
         assert result == {"a": 1}
 
 

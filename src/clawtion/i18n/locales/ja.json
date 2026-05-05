@@ -8,6 +8,16 @@
       "status_ok": "すべてのサービスが実行中です",
       "status_stopped": "すべてのサービスが停止しています"
     },
+    "general": {
+      "error": "エラー: {message}",
+      "cancel": "キャンセルされました。",
+      "processing": "処理中...",
+      "success": "完了しました。",
+      "welcome_prompt": "clawtion CLIへようこそ！",
+      "goodbye": "さようなら！",
+      "yes": "はい",
+      "no": "いいえ"
+    },
     "init": {
       "welcome": "clawtionへようこそ！",
       "vault_prompt": "Vaultをどこに配置しますか？",
@@ -27,7 +37,23 @@
       "scanning": "Vault内の既存ノートをスキャン中...",
       "scan_complete": "{count}件のファイルが見つかりました。",
       "setup_complete": "clawtionの準備ができました！",
-      "try_message": "試してみよう: Claude Codeに「〜についてのノートを探して」と聞いてみてください"
+      "try_message": "試してみよう: Claude Codeに「〜についてのノートを探して」と聞いてみてください",
+      "gemini_missing": "Gemini APIキーが見つかりません。埋め込み検索は利用できません。",
+      "starting_db": "PostgreSQLをDockerで起動中...",
+      "db_started": "データベースコンテナが起動しました。",
+      "migrations_failed": "データベースマイグレーションに失敗しました: {error}",
+      "creating_claude_config": "Claude Code統合ファイルを作成中...",
+      "claude_config_ok": "Claude Code統合の準備ができました。",
+      "service_prompt": "インデックスサービスのモードを選択:",
+      "mode_manual": "手動（必要な時にインデックス）",
+      "mode_scheduled": "定期（定期的なインデックス）",
+      "mode_background": "常駐（常時ファイル監視）"
+    },
+    "mcp": {
+      "starting": "MCPサーバーを起動中...",
+      "started": "MCPサーバーがstdioで準備できました。",
+      "error": "MCPエラー: {message}",
+      "tool_error": "ツール実行エラー: {error}"
     },
     "indexing": {
       "starting": "Indexingワーカーを起動中...",
@@ -125,7 +151,8 @@
       "overall": "総合判定: {verdict}",
       "status_ok": "正常",
       "status_warn": "注意",
-      "status_error": "異常"
+      "status_error": "異常",
+      "check": "{name} を確認中..."
     },
     "config": {
       "current": "現在の設定:",

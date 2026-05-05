@@ -8,6 +8,16 @@
       "status_ok": "All services running",
       "status_stopped": "All services stopped"
     },
+    "general": {
+      "error": "Error: {message}",
+      "cancel": "Cancelled.",
+      "processing": "Processing...",
+      "success": "Done.",
+      "welcome_prompt": "Welcome to clawtion CLI!",
+      "goodbye": "Goodbye!",
+      "yes": "Yes",
+      "no": "No"
+    },
     "init": {
       "welcome": "Welcome to clawtion!",
       "vault_prompt": "Where should your vault be located?",
@@ -27,7 +37,23 @@
       "scanning": "Scanning vault for existing notes...",
       "scan_complete": "Found {count} files to index.",
       "setup_complete": "clawtion is ready!",
-      "try_message": "Try: ask Claude Code 'find my notes about ...'"
+      "try_message": "Try: ask Claude Code 'find my notes about ...'",
+      "gemini_missing": "No Gemini API key found. Embedding search will not work.",
+      "starting_db": "Starting PostgreSQL via Docker...",
+      "db_started": "Database container is running.",
+      "migrations_failed": "Database migration failed: {error}",
+      "creating_claude_config": "Creating Claude Code integration files...",
+      "claude_config_ok": "Claude Code integration is ready.",
+      "service_prompt": "Select indexing service mode:",
+      "mode_manual": "Manual (index on demand)",
+      "mode_scheduled": "Scheduled (periodic indexing)",
+      "mode_background": "Background (file watching always on)"
+    },
+    "mcp": {
+      "starting": "Starting MCP server...",
+      "started": "MCP server ready on stdio.",
+      "error": "MCP error: {message}",
+      "tool_error": "Tool execution error: {error}"
     },
     "indexing": {
       "starting": "Starting indexing worker...",
@@ -125,7 +151,8 @@
       "overall": "Overall: {verdict}",
       "status_ok": "OK",
       "status_warn": "Warning",
-      "status_error": "Error"
+      "status_error": "Error",
+      "check": "Checking {name}..."
     },
     "config": {
       "current": "Current configuration:",

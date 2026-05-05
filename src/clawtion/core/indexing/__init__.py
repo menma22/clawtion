@@ -1,0 +1,1 @@
+# core/indexing パッケージ

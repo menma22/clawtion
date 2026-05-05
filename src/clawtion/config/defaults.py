@@ -70,7 +70,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         },
         "language_detection": "auto",
         "fallback_language": "ja",
-        "context_format": "folder: {folder_path} | file: {title} | section: {heading_path} | text: {content}",
+        "context_format": (
+            "folder: {folder_path} | file: {title} | "
+            "section: {heading_path} | text: {content}"
+        ),
     },
     # ===== Indexing settings =====
     "indexing": {

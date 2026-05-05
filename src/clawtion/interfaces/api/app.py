@@ -11,9 +11,8 @@ Creates and configures a FastAPI instance with:
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import structlog
 from fastapi import FastAPI, Request
@@ -25,6 +24,9 @@ from clawtion.config.loader import get_config
 from clawtion.config.secrets import get_secret
 from clawtion.utils.exceptions import ClawtionError
 from clawtion.utils.logging import setup_logging
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 logger = structlog.get_logger("clawtion.api")
 
@@ -55,9 +57,9 @@ class APIError(BaseModel):
 # ---------------------------------------------------------------------------
 
 __all__ = [
-    "create_app",
-    "APIResponse",
     "APIError",
+    "APIResponse",
+    "create_app",
 ]
 
 
@@ -107,8 +109,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     embedder = GeminiEmbeddingClient(api_key=gemini_api_key) if gemini_api_key else None
 
     # Services
-    from clawtion.core.search.service import SearchService
     from clawtion.core.note.service import NoteService
+    from clawtion.core.search.service import SearchService
     from clawtion.core.trash.service import TrashService
     from clawtion.indexing.queue import QueueManager
 
@@ -175,7 +177,7 @@ def create_app() -> FastAPI:
     # -- Global exception handler for clawtion errors -------------------------
     @app.exception_handler(ClawtionError)
     async def clawtion_error_handler(
-        request: Request,  # noqa: RUF029 (required by FastAPI)
+        request: Request,
         exc: ClawtionError,
     ) -> JSONResponse:
         status_code = _http_status_for(exc.code)
@@ -189,7 +191,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=status_code, content=payload)
 
     # -- Register routers -----------------------------------------------------
-    from clawtion.interfaces.api.routes import search, notes, queue
+    from clawtion.interfaces.api.routes import notes, queue, search
 
     app.include_router(search.router, prefix="/api/v1")
     app.include_router(notes.router, prefix="/api/v1")

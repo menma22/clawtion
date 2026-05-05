@@ -1,0 +1,13 @@
+{
+  "files": {
+    "clawtion-design-doc_v3.md": {
+      "status": "fail",
+      "issues": [
+        "検証エージェント実行エラー: spawnSync C:\\WINDOWS\\system32\\cmd.exe ETIMEDOUT"
+      ],
+      "checkedBy": "auto-agent",
+      "verifiedAt": "2026-05-05T09:55:08.769Z"
+    }
+  },
+  "verifiedAt": "2026-05-05T09:55:08.771Z"
+}

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import os
-from pathlib import Path
 from typing import Any
 
 import click
@@ -12,16 +10,15 @@ import click
 from clawtion.config.loader import get_config
 from clawtion.config.secrets import get_secret
 from clawtion.i18n.translator import t
-
-from clawtion.interfaces.cli.main import async_cmd, is_verbose
+from clawtion.interfaces.cli.main import async_cmd
 
 
 async def _get_services() -> dict[str, Any]:
     """Create core service instances."""
     from clawtion.core.db.connection import DatabaseManager
     from clawtion.core.embedding.gemini import GeminiEmbeddingClient
-    from clawtion.core.indexing.service import IndexingService
     from clawtion.core.indexing.queue import QueueManager
+    from clawtion.core.indexing.service import IndexingService
 
     cfg = get_config()
     db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")
@@ -137,7 +134,7 @@ async def reindex() -> None:
         vault_path = services["vault_path"]
 
         click.echo(f"  {t('cli.indexing.reindex_confirm', count='all')}")
-        count = await indexing_service.reindex_all(vault_path)
+        await indexing_service.reindex_all(vault_path)
 
         click.echo(click.style(f"  {t('cli.indexing.reindex_started')}", fg="green"))
     finally:

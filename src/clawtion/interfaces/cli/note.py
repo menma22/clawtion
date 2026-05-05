@@ -9,18 +9,17 @@ import click
 
 from clawtion.config.loader import get_config
 from clawtion.i18n.translator import t
-
 from clawtion.interfaces.cli.main import async_cmd
 
 
 async def _get_note_services() -> dict[str, Any]:
     """Create NoteService and related objects."""
+    from clawtion.config.secrets import get_secret
     from clawtion.core.db.connection import DatabaseManager
-    from clawtion.core.note.service import NoteService
-    from clawtion.core.indexing.service import IndexingService
     from clawtion.core.embedding.gemini import GeminiEmbeddingClient
     from clawtion.core.indexing.queue import QueueManager
-    from clawtion.config.secrets import get_secret
+    from clawtion.core.indexing.service import IndexingService
+    from clawtion.core.note.service import NoteService
 
     cfg = get_config()
     db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")

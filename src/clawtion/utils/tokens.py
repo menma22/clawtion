@@ -7,7 +7,6 @@ character-based fallback for local-only operations.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 # Gemini models typically use approximately 4 characters per token for
 # English text and 2 characters per token for Japanese / CJK text.
@@ -75,7 +74,6 @@ def _gemini_count_tokens(text: str) -> int:
         ImportError:  if google.genai is not installed.
         RuntimeError: if the SDK call fails.
     """
-    from google.genai import types as genai_types
 
     # google-genai SDK does not expose a standalone tokenizer for
     # embedding models as of the current version. We fall back to

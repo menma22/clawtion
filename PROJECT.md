@@ -55,6 +55,89 @@
 - `utils/language.py`: langdetectによる言語検出（"ja" フォールバック）
   - `detect_language(text)`, `is_cjk(text)`
 
+**コアIndexingService:**
+- `core/indexing/chunker.py`: 3粒度チャンキングエンジン
+  - `Chunk` frozen dataclass（level, content, content_with_context, content_hash, chunk_index, chunk_total, heading_path, token_count, char_count）
+  - `chunk_file_level()`: ファイル全体1チャンク、1500トークン超過時は空リスト
+  - `chunk_coarse_level()`: H1/H2/H3見出しベース分割、超過時は段落フォールバック
+  - `chunk_fine_level()`: pysbdによる文単位分割、target=100トークン
+  - `chunk_file()`: Phase 1エントリポイント（file→coarseフォールバック戦略）
+  - `build_context()`: Embedding入力用コンテキスト注入（`folder: X | file: Y | section: Z | text: ...`）
+  - 構造保護: コードブロック・テーブルは分割禁止、SHA-256ハッシュ
+  - `merge_short_adjacent()`: 短すぎる隣接チャンクの結合（target_min=200）
+- `core/indexing/snapshot.py`: スナップショット方式ファイル読み込み
+  - `FileSnapshot` frozen dataclass（file_path, content, content_hash, taken_at）
+  - `take_snapshot()`: バッファリング読み込み + SHA-256 + タイムスタンプ
+  - `has_changed()`: 現在ファイルとスナップショットのハッシュ比較
+  - `compute_content_hash()`: SHA-256ユーティリティ
+- `core/indexing/queue.py`: キュー管理
+  - `QueueManager`（Constructor DI for DatabaseManager）
+  - `enqueue()`: ジョブ追加（document_id自動解決対応）
+  - `dequeue()`: CTE + FOR UPDATE SKIP LOCKED による信頼性のある取得
+  - `update_status()`: ステータス遷移（completed時はcompleted_at設定、エラー時はerror_history蓄積）
+  - `update_progress()`: 中断・再開用JSONB進捗保存（ステータスをpartialに変更）
+  - `get_pending()`, `get_failed()`, `retry()`, `clear_failed()`, `get_stats()`
+- `core/indexing/watcher.py`: watchdogファイル監視
+  - `FileWatcher`（vault_path, queue_manager, exclude_folders）
+  - `start()`/`stop()`/`is_running()`: Observerライフサイクル
+  - `_ClawtionEventHandler`: on_created/on_modified/on_deleted/on_moved
+  - デバウンス（2秒間隔）、除外フォルダ対応、サポート拡張子フィルタ
+- `core/indexing/service.py`: IndexingService（メインオーケストレーター）
+  - `index_file()`: 完全パイプライン（hashチェック→スナップショット→chunk→dedup→embed→upsert）
+  - `index_folder()`: フォルダ再帰indexing（.clawtion除外）
+  - `reindex_file()`, `reindex_all()`: 強制再indexing
+  - `delete_file()`: 論理削除 + trashテーブル保存 + chunk削除
+  - `process_queue()`: キュー内全pendingジョブ逐次処理
+  - `scan_vault()`: Vault全体スキャン（新規/変更/削除検出 → キュー追加）
+  - `resume_indexing()`: 中断ジョブ再開（進捗チェックポイント対応）
+  - チャンク重複排除: content_hashによる既存embedding再利用
+  - Batch Embedding + 個別フォールバック（with_retry統合）
+  - _TextFileProcessor: デフォルトテキスト抽出プロセッサ
+
+**コア検索サービス:**
+- `core/search/filter.py`: メタデータフィルタビルダー
+  - `MetadataFilter`（チェーン可能ビルダーパターン）
+  - `by_folder()`, `by_tags()`, `by_date_range()`, `by_extension()`, `by_custom()`
+  - `to_sql_conditions()` → `(WHERE句, params dict)`
+  - `to_jsonb_condition()` → JSONB包含条件
+- `core/search/semantic.py`: セマンティック検索
+  - `SemanticSearch`（pgvector `<=>` コサイン距離）
+  - `search()`: embedding生成 → SQL実行 → context構築（suggestions_for_claude含む）
+  - `search_raw()`: HybridSearch用内部API（rank + RRFスコア部分）
+  - `_build_context()`: スコア範囲・平均・文書重複からClaude向けサジェスチョン生成
+- `core/search/keyword.py`: キーワード検索
+  - `KeywordSearch`（PostgreSQL tsvector, `plainto_tsquery`, `ts_rank_cd`）
+  - `search()`: 全文検索SQL実行 → context構築
+  - `search_raw()`: HybridSearch用内部API
+- `core/search/hybrid.py`: ハイブリッド検索（RRF融合）
+  - `HybridSearch`（セマンティック + キーワードのRRF融合）
+  - `search()`: 両方の検索を並行実行 → RRFスコア計算 → 詳細取得
+  - `_fuse_rrf()`: RRF = Σ (1 / (k + rank))、k=60、semantic_weight対応
+  - Embedding失敗時はキーワード検索にフォールバック
+- `core/search/service.py`: 検索統合インターフェース
+  - `SearchService`: semantic/keyword/hybrid検索3種を統合
+  - `SearchResult` dataclass（results + context）
+  - `NavigationInfo` dataclass（file_path, has_previous/next, chunk_ids）
+  - `get_file_chunks()`, `get_neighbor_chunks()`, `get_parent_chunk()`
+  - `list_folders()`, `list_notes()`
+
+**コアノートサービス:**
+- `core/note/service.py`: ノートCRUDサービス
+  - `NoteService`（Constructor DI: DatabaseManager, vault_path, IndexingService）
+  - `create()`: .md作成 + documents INSERT + 自動indexing
+  - `get()`: DB情報 + ファイル本文読み込み
+  - `update()`: ファイル更新 + content_hash更新 + 自動reindexing
+  - `delete()`: 完全削除（permanent=true）または論理削除+trash保存
+  - `list_notes()`, `list_folders()`
+
+**コアゴミ箱サービス:**
+- `core/trash/service.py`: ゴミ箱管理
+  - `TrashService`（Constructor DI: DatabaseManager, vault_path）
+  - `list_items()`: 全ゴミ箱アイテム一覧（deleted_at降順）
+  - `restore()`: ファイル復元 + documentsテーブル復元 + trash削除（既存ファイルは.bak保存）
+  - `empty()`: 全アイテム物理削除
+  - `purge_expired()`: auto_purge_at <= now のアイテム削除
+
 **REST API（FastAPI）:**
 - `interfaces/api/app.py`: FastAPIアプリケーションファクトリ
   - `create_app()`: 完全構成済みFastAPIインスタンスを返す
@@ -170,23 +253,47 @@ clawtion/
 │   │   ├── retry.py                      # リトライユーティリティ
 │   │   ├── tokens.py                     # トークンカウント
 │   │   └── language.py                   # 言語検出
-│   └── i18n/
-│       ├── translator.py                 # 翻訳エンジン
-│       └── locales/
-│           ├── en.json                   # 英語翻訳
-│           └── ja.json                   # 日本語翻訳
+│   ├── core/
+│   │   ├── db/
+│   │   │   ├── connection.py             # DatabaseManager（async engine + session）
+│   │   │   ├── models.py                 # SQLAlchemyモデル定義
+│   │   │   └── migrations.py            # マイグレーションユーティリティ
+│   │   ├── embedding/
+│   │   │   ├── client.py                 # EmbeddingClient Protocol + EmbeddingResult
+│   │   │   ├── gemini.py                 # GeminiEmbeddingClient実装
+│   │   │   └── batch.py                  # Batch API対応
+│   │   ├── indexing/
+│   │   │   ├── chunker.py                # 3粒度チャンキング（file/coarse/fine）
+│   │   │   ├── queue.py                  # キュー管理（FOR UPDATE SKIP LOCKED）
+│   │   │   ├── watcher.py                # watchdogファイル監視
+│   │   │   ├── snapshot.py              # スナップショット方式読み込み
+│   │   │   └── service.py               # IndexingService（パイプライン統括）
+│   │   ├── search/
+│   │   │   ├── filter.py                 # メタデータフィルタビルダー
+│   │   │   ├── semantic.py               # セマンティック検索（pgvector <=>）
+│   │   │   ├── keyword.py                # キーワード検索（tsvector）
+│   │   │   ├── hybrid.py                # ハイブリッド検索（RRF fusion, k=60）
+│   │   │   └── service.py               # SearchService（3検索統合 + ナビゲーション）
+│   │   ├── note/
+│   │   │   └── service.py                # ノートCRUD（ファイルI/O + DB同期）
+│   │   └── trash/
+│   │       └── service.py                # ゴミ箱管理（復元/パージ）
+│   ├── i18n/
+│   │   ├── translator.py                 # 翻訳エンジン
+│   │   └── locales/
+│   │       ├── en.json                   # 英語翻訳
+│   │       └── ja.json                   # 日本語翻訳
 │   ├── interfaces/
-│   │   └── api/
-│   │       ├── __init__.py               # パッケージ
-│   │       ├── app.py                    # FastAPI ファクトリ（create_app）
-│   │       ├── cli_serve.py              # CLIエントリ（uvicorn/mcp起動）
-│   │       └── routes/
-│   │           ├── __init__.py           # パッケージ
-│   │           ├── search.py             # 検索エンドポイント
-│   │           ├── notes.py              # ノートCRUDエンドポイント
-│   │           └── queue.py              # キュー管理エンドポイント
+│   │   ├── api/
+│   │   │   ├── app.py                    # FastAPI ファクトリ（create_app）
+│   │   │   ├── cli_serve.py              # CLIエントリ（uvicorn/mcp起動）
+│   │   │   └── routes/
+│   │   │       ├── search.py             # 検索エンドポイント
+│   │   │       ├── notes.py              # ノートCRUDエンドポイント
+│   │   │       └── queue.py              # キュー管理エンドポイント
+│   │   ├── cli/                          # CLIインターフェース
+│   │   └── mcp/                          # MCPサーバー
 │   └── claude_integration/
-│       ├── __init__.py                   # パッケージ
 │       ├── installer.py                  # ClaudeCodeIntegrationInstaller
 │       └── templates/
 │           ├── subagent.md               # サブエージェント定義テンプレート
@@ -205,12 +312,27 @@ clawtion/
 | i18n/translator.py | (標準ライブラリのみ) |
 | alembic/env.py | clawtion.core.db.models, sqlalchemy[asyncio], alembic |
 | alembic/001_initial_schema.py | pgvector.sqlalchemy, alembic |
-| interfaces/api/app.py | fastapi, uvicorn, pydantic, clawtion.core.db.connection, clawtion.core.embedding.gemini, clawtion.core.search.service, clawtion.core.note.service, clawtion.core.trash.service, clawtion.indexing.queue |
-| interfaces/api/routes/search.py | fastapi, pydantic, clawtion.interfaces.api.app |
-| interfaces/api/routes/notes.py | fastapi, pydantic, clawtion.interfaces.api.app |
-| interfaces/api/routes/queue.py | fastapi, pydantic, clawtion.interfaces.api.app |
-| interfaces/api/cli_serve.py | uvicorn (optional), clawtion.interfaces.mcp.server (optional) |
-| claude_integration/installer.py | clawtion.config.loader, shutil, json |
+| core/db/connection.py | sqlalchemy[asyncio], asyncpg |
+| core/embedding/client.py | typing.Protocol (標準ライブラリ) |
+| core/embedding/gemini.py | core/embedding/client.py, google-genai |
+| core/indexing/chunker.py | utils/tokens.py, utils/language.py, utils/exceptions.py, hashlib, re, pysbd |
+| core/indexing/queue.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
+| core/indexing/watcher.py | core/indexing/queue.py, watchdog, utils/exceptions.py |
+| core/indexing/snapshot.py | utils/exceptions.py, utils/logging.py, hashlib |
+| core/indexing/service.py | core/db/connection.py, core/embedding/client.py, config/loader.py, utils/retry.py, utils/exceptions.py, core/indexing/chunker.py, core/indexing/queue.py, core/indexing/snapshot.py |
+| core/search/filter.py | (標準ライブラリのみ) |
+| core/search/semantic.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/filter.py |
+| core/search/keyword.py | core/db/connection.py, utils/logging.py, search/filter.py |
+| core/search/hybrid.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/filter.py |
+| core/search/service.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/hybrid.py, search/filter.py |
+| core/note/service.py | core/db/connection.py, core/indexing/service.py, utils/exceptions.py, utils/logging.py |
+| core/trash/service.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
+| interfaces/api/app.py | fastapi, uvicorn, pydantic, core/db/connection.py, core/embedding/gemini.py, core/search/service.py, core/note/service.py, core/trash/service.py, core/indexing/queue.py |
+| interfaces/api/routes/search.py | fastapi, pydantic, interfaces/api/app.py |
+| interfaces/api/routes/notes.py | fastapi, pydantic, interfaces/api/app.py |
+| interfaces/api/routes/queue.py | fastapi, pydantic, interfaces/api/app.py |
+| interfaces/api/cli_serve.py | uvicorn (optional), interfaces/mcp/server.py (optional) |
+| claude_integration/installer.py | config/loader.py, shutil, json |
 | claude_integration/templates/subagent.md | （テンプレートファイル、実行依存なし） |
 | claude_integration/templates/skill.md | （テンプレートファイル、実行依存なし） |
 

@@ -21,8 +21,6 @@ from typing import Any
 
 import structlog
 
-from clawtion.config.loader import get_config
-
 logger = structlog.get_logger("clawtion.claude_integration")
 
 # ---------------------------------------------------------------------------

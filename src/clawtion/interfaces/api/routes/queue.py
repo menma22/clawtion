@@ -11,6 +11,7 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
 
 from clawtion.interfaces.api.app import APIResponse
 

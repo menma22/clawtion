@@ -8,6 +8,7 @@ Implements a tiered secrets store with the following priority:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -43,7 +44,10 @@ def _derive_key() -> bytes:
     """
     import hashlib
 
-    raw = f"{os.uname().nodename}-{os.getlogin()}" if hasattr(os, "uname") else os.environ.get("COMPUTERNAME", "unknown")
+    if hasattr(os, "uname"):
+        raw = f"{os.uname().nodename}-{os.getlogin()}"
+    else:
+        raw = os.environ.get("COMPUTERNAME", "unknown")
     return hashlib.sha256(raw.encode()).digest()
 
 
@@ -163,10 +167,8 @@ def delete_secret(key: str) -> None:
     try:
         import keyring
 
-        try:
+        with contextlib.suppress(keyring.errors.PasswordDeleteError):
             keyring.delete_password(_KEYRING_SERVICE, key)
-        except keyring.errors.PasswordDeleteError:
-            pass
     except Exception:
         pass
 

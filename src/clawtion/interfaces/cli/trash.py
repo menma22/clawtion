@@ -9,7 +9,6 @@ import click
 
 from clawtion.config.loader import get_config
 from clawtion.i18n.translator import t
-
 from clawtion.interfaces.cli.main import async_cmd
 
 

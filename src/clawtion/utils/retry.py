@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
-from typing import Any, TypeVar
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from clawtion.utils.logging import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
 
 logger = get_logger("clawtion.utils.retry")
 
@@ -75,13 +77,11 @@ async def with_retry(
         The last exception raised by *func* once all retries are exhausted.
     """
     cfg = config or _DEFAULT_CONFIG
-    last_exception: Exception | None = None
 
     for attempt in range(cfg.max_attempts):
         try:
             return await func(**kwargs)
         except error_types as exc:
-            last_exception = exc
             is_last = attempt >= cfg.max_attempts - 1
 
             if is_last:

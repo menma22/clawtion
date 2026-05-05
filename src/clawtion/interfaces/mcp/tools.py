@@ -12,11 +12,8 @@ Tools are registered with the MCP server via ``register_all_tools(server)``.
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from typing import Any
-
-from clawtion.i18n.translator import t
 
 # ---------------------------------------------------------------------------
 # Helpers

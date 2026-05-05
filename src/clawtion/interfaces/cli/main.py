@@ -16,19 +16,18 @@ from typing import Any
 import click
 
 from clawtion.i18n.translator import t
+from clawtion.interfaces.cli.config import config_cmd
+from clawtion.interfaces.cli.doctor import doctor
+from clawtion.interfaces.cli.index import index
 
 # ---------------------------------------------------------------------------
 # Import subcommand groups (lazy when possible to avoid circular deps)
 # ---------------------------------------------------------------------------
-
 from clawtion.interfaces.cli.init import init
-from clawtion.interfaces.cli.service import service
-from clawtion.interfaces.cli.index import index
-from clawtion.interfaces.cli.search import search
 from clawtion.interfaces.cli.note import note
+from clawtion.interfaces.cli.search import search
+from clawtion.interfaces.cli.service import service
 from clawtion.interfaces.cli.trash import trash
-from clawtion.interfaces.cli.doctor import doctor
-from clawtion.interfaces.cli.config import config_cmd
 
 # ---------------------------------------------------------------------------
 # Global options
@@ -39,7 +38,7 @@ _VERBOSE = False
 
 def set_verbose(val: bool) -> None:
     """Set global verbose flag."""
-    global _VERBOSE  # noqa: PLW0603
+    global _VERBOSE
     _VERBOSE = val
 
 

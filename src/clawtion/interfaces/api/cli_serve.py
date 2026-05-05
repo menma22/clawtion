@@ -8,7 +8,6 @@ These functions are called from the Click CLI commands
 from __future__ import annotations
 
 import sys
-from typing import Any
 
 import structlog
 

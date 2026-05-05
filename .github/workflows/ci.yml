@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff mypy
+      - run: pip install -e ".[dev]"
+      - run: ruff check src/ tests/
+      - run: ruff format --check src/ tests/
+      - run: mypy --strict src/
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: clawtion
+          POSTGRES_PASSWORD: clawtion
+          POSTGRES_DB: clawtion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CLAWTION_DB_URL: postgresql://clawtion:clawtion@localhost:5432/clawtion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/unit -v
+      - run: pytest tests/integration -v
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: clawtion
+          POSTGRES_PASSWORD: clawtion
+          POSTGRES_DB: clawtion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CLAWTION_DB_URL: postgresql://clawtion:clawtion@localhost:5432/clawtion
+      CLAWTION_VAULT: /tmp/clawtion-test-vault
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: mkdir -p /tmp/clawtion-test-vault
+      - run: pytest tests/e2e -v

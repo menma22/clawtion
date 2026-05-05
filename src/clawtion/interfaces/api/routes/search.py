@@ -6,7 +6,6 @@ along with chunk-level navigation (get chunks by document, neighbours, parent).
 
 from __future__ import annotations
 
-import datetime
 from typing import Any
 
 import structlog

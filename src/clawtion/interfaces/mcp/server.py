@@ -41,7 +41,7 @@ async def get_db() -> Any:
     if _db_instance is None:
         from clawtion.core.db.connection import DatabaseManager
 
-        cfg = get_config_cached()
+        get_config_cached()
         db_url = os.environ.get(
             "CLAWTION_DB_URL",
             "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion",
@@ -78,9 +78,9 @@ async def get_search_service() -> Any:
 
 async def get_note_service() -> Any:
     """Return a singleton NoteService."""
-    from clawtion.core.note.service import NoteService
-    from clawtion.core.indexing.service import IndexingService
     from clawtion.core.indexing.queue import QueueManager
+    from clawtion.core.indexing.service import IndexingService
+    from clawtion.core.note.service import NoteService
 
     cfg = get_config_cached()
     db = await get_db()
@@ -112,7 +112,6 @@ def create_mcp_server() -> Any:
         An ``mcp.Server`` instance with all tools registered.
     """
     from mcp.server import Server
-    from mcp.server.models import InitializationOptions
 
     server = Server("clawtion")
 

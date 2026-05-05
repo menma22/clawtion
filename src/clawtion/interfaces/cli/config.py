@@ -12,11 +12,9 @@ import click
 import yaml
 
 from clawtion.config.loader import get_config, reload_config
-from clawtion.config.secrets import get_secret, set_secret, delete_secret
+from clawtion.config.secrets import set_secret
 from clawtion.i18n.translator import t
-
 from clawtion.interfaces.cli.main import async_cmd
-
 
 _GLOBAL_CONFIG_DIR = Path.home() / ".clawtion"
 _GLOBAL_CONFIG_PATH = _GLOBAL_CONFIG_DIR / "config.yaml"
@@ -196,4 +194,4 @@ async def set_key(key_name: str, value: str | None) -> None:
         set_secret(secret_key, resolved_value.strip())
         click.echo(click.style(f"  {t('cli.config.set_key_saved')}", fg="green"))
     else:
-        click.echo(click.style(f"  Invalid key value.", fg="red"))
+        click.echo(click.style("  Invalid key value.", fg="red"))

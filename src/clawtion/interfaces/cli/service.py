@@ -13,9 +13,7 @@ import click
 
 from clawtion.config.loader import get_config
 from clawtion.i18n.translator import t
-
 from clawtion.interfaces.cli.main import async_cmd
-
 
 _SERVICE_NAME = "clawtion"
 _DB_URL_DEFAULT = "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion"
@@ -342,13 +340,13 @@ def _install_linux(mode: str) -> None:
             f"Type=oneshot\n"
         )
         timer_content = (
-            f"[Unit]\n"
-            f"Description=clawtion hourly indexing timer\n\n"
-            f"[Timer]\n"
-            f"OnCalendar=hourly\n"
-            f"Persistent=true\n\n"
-            f"[Install]\n"
-            f"WantedBy=default.target\n"
+            "[Unit]\n"
+            "Description=clawtion hourly indexing timer\n\n"
+            "[Timer]\n"
+            "OnCalendar=hourly\n"
+            "Persistent=true\n\n"
+            "[Install]\n"
+            "WantedBy=default.target\n"
         )
         (timer_dir / f"{_SERVICE_NAME}.timer").write_text(timer_content)
     else:

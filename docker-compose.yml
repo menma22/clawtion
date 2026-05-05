@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: clawtion-db
+    environment:
+      POSTGRES_USER: clawtion
+      POSTGRES_PASSWORD: clawtion
+      POSTGRES_DB: clawtion
+    ports:
+      - "5432:5432"
+    volumes:
+      - clawtion_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clawtion -d clawtion"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  clawtion_pgdata:
+    name: clawtion_pgdata

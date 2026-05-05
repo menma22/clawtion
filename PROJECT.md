@@ -55,13 +55,62 @@
 - `utils/language.py`: langdetectによる言語検出（"ja" フォールバック）
   - `detect_language(text)`, `is_cjk(text)`
 
-**国際化:**
-- `i18n/translator.py`: JSONファイルベースの翻訳エンジン
-  - `t(key, **kwargs)`: ドット区切りキー解決 + 変数補間
-  - `set_language(lang)`, `get_current_language()`, `reload_locales()`
-  - 自動検出（CLAWTION_LANG → LANG → OSロケール → "en"）
-- `i18n/locales/en.json`: 完全な英語翻訳（cli全コマンド + ui）
-- `i18n/locales/ja.json`: 完全な日本語翻訳
+**REST API（FastAPI）:**
+- `interfaces/api/app.py`: FastAPIアプリケーションファクトリ
+  - `create_app()`: 完全構成済みFastAPIインスタンスを返す
+  - CORSミドルウェア（全オリジン許可）
+  - Request IDミドルウェア（X-Request-IDヘッダー）
+  - グローバル例外ハンドラ（ClawtionError → HTTPステータス + `{error: {code, message, details}}`）
+  - 統一レスポンスラッパー: `APIResponse[T](data, meta)` / `APIError(code, message, details)`
+  - Lifespanによるサービス初期化: DatabaseManager, GeminiEmbeddingClient, SearchService, NoteService, TrashService, QueueManagerをapp.stateに設定
+  - `GET /health`, `GET /version` エンドポイント
+  - 全ルーターを `/api/v1/` プレフィックスで登録
+- `interfaces/api/routes/search.py`: 検索エンドポイント
+  - `POST /api/v1/search/semantic` - ベクトル類似度検索
+  - `POST /api/v1/search/keyword` - 全文キーワード検索
+  - `POST /api/v1/search/hybrid` - ハイブリッド検索（ベクトル + キーワード）
+  - `GET /api/v1/chunks/{document_id}/all` - ドキュメントの全チャンク取得
+  - `GET /api/v1/chunks/{chunk_id}/neighbors` - 前後チャンク取得
+  - `GET /api/v1/chunks/{chunk_id}/parent` - 親チャンク取得
+  - 全検索に実行時間計測メタデータ付与
+- `interfaces/api/routes/notes.py`: ノートCRUDエンドポイント
+  - `POST /api/v1/notes` - 新規ノート作成（201 Created）
+  - `GET /api/v1/notes/{document_id}` - ノート取得
+  - `PUT /api/v1/notes/{document_id}` - ノート更新（content, title, folder, tags）
+  - `DELETE /api/v1/notes/{document_id}?permanent=false` - ノート削除（ゴミ箱経由/完全削除）
+  - `GET /api/v1/notes` - ノート一覧（folderフィルタ、limit/offsetページネーション）
+  - `GET /api/v1/folders` - フォルダ一覧
+- `interfaces/api/routes/queue.py`: キュー管理エンドポイント
+  - `GET /api/v1/queue/status` - キュー統計（pending/processing/completed/failed/cancelled）
+  - `GET /api/v1/queue/pending` - ペンディングジョブ一覧
+  - `GET /api/v1/queue/failed` - 失敗ジョブ一覧
+  - `POST /api/v1/queue/process` - キュー処理トリガー
+  - `POST /api/v1/queue/retry/{queue_id}` - 特定ジョブリトライ
+  - `POST /api/v1/queue/clear-failed` - 全失敗ジョブクリア
+  - `GET /api/v1/metrics` - システムメトリクス（総ドキュメント数、チャンク数、キュー状態）
+- `interfaces/api/cli_serve.py`: CLIエントリポイント
+  - `run_api_server(host, port)`: uvicornでFastAPIサーバー起動
+  - `run_mcp_server()`: MCPサーバー起動（ModuleNotFoundError時に明確なエラーメッセージ）
+
+**Claude Code統合:**
+- `claude_integration/installer.py`: ClaudeCodeIntegrationInstallerクラス
+  - `install()`: サブエージェント定義、スキル定義、MCP設定をインストール
+  - `uninstall()`: 全統合ファイルを削除（MCP設定はclawtionセクションのみ削除、他は維持）
+  - `is_installed()`: 各コンポーネントのインストール状態を確認
+  - `_write_subagent_definition()`: ~/.claude/agents/clawtion-knowledge.md を配置
+  - `_write_skill_definition()`: ~/.claude/skills/clawtion-search/SKILL.md を配置
+  - `_update_claude_config()`: ~/.claude.json の mcpServers.clawtion を更新/作成
+  - 既存ファイルのバックアップ機能付き
+- `claude_integration/templates/subagent.md`: サブエージェント定義テンプレート
+  - YAML frontmatter: name, description, tools（MCPツール一覧）, model: sonnet, memory: project
+  - 検索戦略の意思決定フレームワーク（クエリ種類に応じた手法選択）
+  - マルチステップ検索戦略（初回失敗時の代替手段）
+  - 結果合成ルール（main agentに返すべき内容/返すべきでない内容）
+  - 出力フォーマット指定（Summary, Key Findings, Relevant Files, Suggested Next Steps）
+- `claude_integration/templates/skill.md`: スキル定義テンプレート
+  - トリガー条件（ユーザーが自分のノートについて質問したとき）
+  - 呼び出し方法（subagent_type='clawtion-knowledge'）
+  - 禁止事項（MCPツール直接呼び出し禁止、一般知識で回答しない）
 
 **データベースマイグレーション:**
 - `alembic.ini`: Alembic設定（sqlalchemy.urlは環境変数から）
@@ -79,14 +128,26 @@
 ```
 3層アーキテクチャ:
 
-[Claude Code / 人間] ←→ [インターフェース層] ←→ [コアロジック層] ←→ [ストレージ層]
-                            CLI / MCP / REST API      Indexing/Search/Note     Postgres+pgvector / Vault
+[Claude Code] ←→ [インターフェース層] ←→ [コアロジック層] ←→ [ストレージ層]
+   ↑                    │                     │
+   │  MCP/stdio         │ CLI / REST API      │ Indexing/Search/Note
+   │                    │                     │
+   └── subagent ── skill (claude_integration)
 
 設定層:
   defaults.py → ~/.clawtion/config.yaml → vault/.clawtion/config.yaml → CLAWTION_* env vars
                                                                               ↓
                                                                        secrets.py
                                                                     (keychain/enc/env)
+
+Claude Code 統合構造:
+  [Claude Code メインエージェント]
+         ↓ Skill検知 → Subagent委譲
+  [clawtion-knowledge サブエージェント]  ← 専用コンテキスト
+         ↓ MCPツール呼び出し
+  [clawtion MCPサーバー]  ← 生のデータ操作
+         ↓
+  [Postgres + pgvector DB]
 ```
 
 ### 4. ディレクトリ構造
@@ -114,6 +175,22 @@ clawtion/
 │       └── locales/
 │           ├── en.json                   # 英語翻訳
 │           └── ja.json                   # 日本語翻訳
+│   ├── interfaces/
+│   │   └── api/
+│   │       ├── __init__.py               # パッケージ
+│   │       ├── app.py                    # FastAPI ファクトリ（create_app）
+│   │       ├── cli_serve.py              # CLIエントリ（uvicorn/mcp起動）
+│   │       └── routes/
+│   │           ├── __init__.py           # パッケージ
+│   │           ├── search.py             # 検索エンドポイント
+│   │           ├── notes.py              # ノートCRUDエンドポイント
+│   │           └── queue.py              # キュー管理エンドポイント
+│   └── claude_integration/
+│       ├── __init__.py                   # パッケージ
+│       ├── installer.py                  # ClaudeCodeIntegrationInstaller
+│       └── templates/
+│           ├── subagent.md               # サブエージェント定義テンプレート
+│           └── skill.md                  # スキル定義テンプレート
 ```
 
 ### 5. 依存関係
@@ -128,6 +205,14 @@ clawtion/
 | i18n/translator.py | (標準ライブラリのみ) |
 | alembic/env.py | clawtion.core.db.models, sqlalchemy[asyncio], alembic |
 | alembic/001_initial_schema.py | pgvector.sqlalchemy, alembic |
+| interfaces/api/app.py | fastapi, uvicorn, pydantic, clawtion.core.db.connection, clawtion.core.embedding.gemini, clawtion.core.search.service, clawtion.core.note.service, clawtion.core.trash.service, clawtion.indexing.queue |
+| interfaces/api/routes/search.py | fastapi, pydantic, clawtion.interfaces.api.app |
+| interfaces/api/routes/notes.py | fastapi, pydantic, clawtion.interfaces.api.app |
+| interfaces/api/routes/queue.py | fastapi, pydantic, clawtion.interfaces.api.app |
+| interfaces/api/cli_serve.py | uvicorn (optional), clawtion.interfaces.mcp.server (optional) |
+| claude_integration/installer.py | clawtion.config.loader, shutil, json |
+| claude_integration/templates/subagent.md | （テンプレートファイル、実行依存なし） |
+| claude_integration/templates/skill.md | （テンプレートファイル、実行依存なし） |
 
 ---
 
@@ -160,11 +245,26 @@ clawtion/
   - **(b) Change & Rationale:** プロジェクト全体がasyncpgベースの非同期DB接続を使用するため、マイグレーションも非同期エンジンで統一。`asyncio.run()` でラップして実行
   - **(c) Adopted Best Practice:** `create_async_engine` → `connection.run_sync(do_run_migrations)` パターン。env.pyは環境変数CLAWTION_DB_URLからURLを取得
 
+- **Subject:** REST API統一レスポンスフォーマット
+  - **(a) Original Design:** エンドポイントごとに異なるレスポンス形式
+  - **(b) Change & Rationale:** APIクライアント（特にClaude Code MCPとTauri UI）が一貫したレスポンス構造を期待する。全エンドポイントで `{data: ..., meta: {...}}` の統一ラッパーを使用し、エラー時は `{error: {code, message, details}}` に統一。Pydantic Generic モデル `APIResponse[T]` で型安全性を確保
+  - **(c) Adopted Best Practice:** `APIResponse(BaseModel, Generic[T])` を全ルーターで使用。エラーハンドラは `ClawtionError.code` → HTTPステータスコードのマッピングテーブルで一元管理
+
+- **Subject:** FastAPI依存性注入パターン
+  - **(a) Original Design:** 各ルーター内でサービスを直接importしてインスタンス化
+  - **(b) Change & Rationale:** アプリケーションライフサイクル管理（DB接続の開始/終了）が必要。FastAPIのlifespan機構でサービスを初期化し、app.stateに格納。ルーターは `Depends()` 経由でRequestからサービスを取得。これによりテスト時はapp.stateをモックで置き換え可能
+  - **(c) Adopted Best Practice:** `@asynccontextmanager lifespan(app)` 内で全サービスを初期化。各ルーターは `_get_service(request: Request)` ヘルパーを `Depends` 経由で使用
+
+- **Subject:** Claude Code統合の3層分離
+  - **(a) Original Design:** 単一のCLIコマンドから直接知識ベースにアクセス
+  - **(b) Change & Rationale:** Claude Codeのメインエージェントコンテキストを検索ノイズで汚染しないため、サブエージェント + スキルの2段階委譲アーキテクチャを採用。サブエージェントは専用コンテキストで検索を実行し、整形済みサマリーのみをメインエージェントに返す
+  - **(c) Adopted Best Practice:** メインエージェント → Skill検知 → Subagent委譲 → MCPツール実行 の4段階パイプライン。インストーラは `~/.claude/agents/`、`~/.claude/skills/`、`~/.claude.json` の3箇所を自動設定
+
 ---
 
 ## PART 3: PROJECT MANAGEMENT
 
-### 現在のフェーズ: Phase 0（基盤構築）
+### 現在のフェーズ: Phase 0→1 移行（基盤構築完了、インターフェース層実装中）
 
 **完了タスク:**
 - [x] プロジェクト構造の確立（src/clawtion/ パッケージ構成）
@@ -174,15 +274,22 @@ clawtion/
 - [x] ユーティリティ（例外、ロギング、リトライ、トークン、言語）
 - [x] 国際化（en.json, ja.json, 翻訳エンジン）
 - [x] 初期Alembicマイグレーション（全5テーブル + インデックス）
+- [x] REST APIフレームワーク（FastAPI ファクトリ、CORS、Request ID、例外ハンドラ、レスポンスラッパー、lifespan管理）
+- [x] 検索API（semantic/keyword/hybrid search、チャンクナビゲーション）
+- [x] ノートCRUD API（作成/取得/更新/削除/一覧/フォルダ一覧）
+- [x] キュー管理API（ステータス/一覧/処理/リトライ/クリア/メトリクス）
+- [x] APIサーバーCLIエントリポイント（uvicorn起動、MCP起動）
+- [x] Claude Code統合インストーラ（install/uninstall/is_installed）
+- [x] サブエージェントテンプレート（検索戦略、結果合成ルール含む設計書準拠）
+- [x] スキルテンプレート（トリガー条件、呼び出し方法、禁止事項含む設計書準拠）
 
 **未完了（次のアクション）:**
-- [ ] コアDBレイヤー（connection.py, models.py, migrations.py）
+- [ ] コアDBレイヤー（connection.py, DatabaseManager実装）
 - [ ] EmbeddingClient（Gemini Embedding 2統合）
 - [ ] IndexingService（チャンカー、ファイル監視、キュー管理）
 - [ ] SearchService（セマンティック、キーワード、ハイブリッド検索）
 - [ ] NoteService（CRUD、ゴミ箱）
+- [ ] TrashService（ゴミ箱操作）
 - [ ] CLIインターフェース（Clickコマンド）
-- [ ] MCPサーバー
-- [ ] REST API（FastAPI）
-- [ ] Claude Code統合（サブエージェント、スキル）
-- [ ] Test実装
+- [ ] MCPサーバー（MCPプロトコル実装）
+- [ ] Test実装（単体テスト + 統合テスト）

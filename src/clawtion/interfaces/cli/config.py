@@ -195,3 +195,96 @@ async def set_key(key_name: str, value: str | None) -> None:
         click.echo(click.style(f"  {t('cli.config.set_key_saved')}", fg="green"))
     else:
         click.echo(click.style("  Invalid key value.", fg="red"))
+
+
+# ---- Config toggle helpers ----
+
+
+def _update_nested_bool(key: str, value: bool) -> None:
+    """Update a nested boolean value in the global config YAML.
+
+    Reads the existing file, sets ``key`` (dot-separated) to ``value``
+    (as a proper YAML boolean), and writes back.
+    """
+    _ensure_config_dir()
+
+    existing: dict[str, Any] = {}
+    if _GLOBAL_CONFIG_PATH.exists():
+        with _GLOBAL_CONFIG_PATH.open(encoding="utf-8") as f:
+            loaded = yaml.safe_load(f)
+            existing = dict(loaded) if loaded else {}
+
+    keys = key.split(".")
+    target = existing
+    for k in keys[:-1]:
+        if k not in target or not isinstance(target[k], dict):
+            target[k] = {}
+        target = target[k]
+    target[keys[-1]] = value
+
+    with _GLOBAL_CONFIG_PATH.open("w", encoding="utf-8") as f:
+        yaml.dump(existing, f, default_flow_style=False, allow_unicode=True)
+
+    reload_config()
+
+
+@config_cmd.command(name="toggle-multi-resolution")
+@async_cmd
+async def toggle_multi_resolution() -> None:
+    """Toggle multi-resolution chunking on/off.
+
+    When enabled, all active chunking levels (file, coarse, fine) are
+    generated during indexing.  When disabled, Phase 1 single-level
+    fallback behaviour applies.
+    """
+    cfg = get_config()
+    current: bool = bool(
+        cfg.get("chunking", {})
+        .get("multi_resolution", {})
+        .get("enabled", True)
+    )
+    new_value = not current
+
+    _update_nested_bool("chunking.multi_resolution.enabled", new_value)
+
+    status = click.style("enabled", fg="green") if new_value else click.style("disabled", fg="yellow")
+    click.echo(
+        click.style(
+            f"  Multi-resolution chunking {status}.",
+            fg="green",
+        )
+    )
+
+
+@config_cmd.command(name="enable-level")
+@click.argument("level", type=click.Choice(["file", "coarse", "fine"]))
+@async_cmd
+async def enable_level(level: str) -> None:
+    """Enable a chunking level (file, coarse, or fine).
+
+    The level will be generated during indexing when multi-resolution
+    chunking is active.
+    """
+    config_key = f"chunking.levels.{level}.enabled"
+    _update_nested_bool(config_key, True)
+
+    click.echo(
+        click.style(f"  Level '{level}' enabled.", fg="green")
+    )
+
+
+@config_cmd.command(name="disable-level")
+@click.argument("level", type=click.Choice(["file", "coarse", "fine"]))
+@async_cmd
+async def disable_level(level: str) -> None:
+    """Disable a chunking level (file, coarse, or fine).
+
+    The level will be skipped during indexing even when multi-resolution
+    chunking is active.
+    """
+    config_key = f"chunking.levels.{level}.enabled"
+    _update_nested_bool(config_key, False)
+
+    click.echo(
+        click.style(f"  Level '{level}' disabled.", fg="yellow")
+    )

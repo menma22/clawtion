@@ -75,12 +75,21 @@
       "keyword": "Keyword search results for: {query}",
       "hybrid": "Hybrid search results for: {query}",
       "no_results": "No results found.",
+      "query_label": "Query: {query}",
       "result_item": "{score:.2f} [{file_path}] {heading}",
       "result_detail": "  {content_preview}...",
       "results_summary": "Found {count} results in {duration}ms",
       "folder_filter": "Filtering by folder: {folder}",
       "tags_filter": "Filtering by tags: {tags}",
       "extension_filter": "Filtering by extension: {ext}"
+    },
+    "namespace": {
+      "created": "Namespace '{name}' created successfully.",
+      "description": "Description",
+      "namespace_id": "Namespace ID",
+      "no_namespaces": "No namespaces found. Create one with 'clawtion namespace create <name>'.",
+      "list_header": "Namespaces ({count})",
+      "assigned": "Document {document_id} assigned to namespace {namespace_id} ({chunks_updated} chunks updated)."
     },
     "note": {
       "created": "Note created: {file_path}",

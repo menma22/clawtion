@@ -69,6 +69,7 @@ def register_all_tools(server: Any) -> None:
         top_k: int = 10,
         granularity: str = "file",
         filter: str | None = None,
+        namespace: str | None = None,
     ) -> dict[str, Any]:
         """Perform semantic vector search.
 
@@ -77,6 +78,7 @@ def register_all_tools(server: Any) -> None:
             top_k: Maximum number of results (default 10).
             granularity: Result granularity: "file" or "chunk" (default "file").
             filter: Optional JSON string with filter criteria.
+            namespace: Optional namespace UUID to scope the search.
 
         Returns:
             SearchResult with matches, scores, and file paths.
@@ -91,10 +93,12 @@ def register_all_tools(server: Any) -> None:
                 top_k=top_k,
                 granularity=granularity,
                 filter=filter_dict,
+                namespace=namespace,
             )
             return _success_response({
                 "query": query,
                 "granularity": granularity,
+                "namespace": namespace,
                 "count": len(results),
                 "results": [_format_search_result(r) for r in results],
             })
@@ -107,6 +111,7 @@ def register_all_tools(server: Any) -> None:
         top_k: int = 10,
         granularity: str = "file",
         filter: str | None = None,
+        namespace: str | None = None,
     ) -> dict[str, Any]:
         """Perform keyword full-text search.
 
@@ -115,6 +120,7 @@ def register_all_tools(server: Any) -> None:
             top_k: Maximum number of results (default 10).
             granularity: Result granularity: "file" or "chunk" (default "file").
             filter: Optional JSON string with filter criteria.
+            namespace: Optional namespace UUID to scope the search.
 
         Returns:
             SearchResult with matches, scores, and file paths.
@@ -129,10 +135,12 @@ def register_all_tools(server: Any) -> None:
                 top_k=top_k,
                 granularity=granularity,
                 filter=filter_dict,
+                namespace=namespace,
             )
             return _success_response({
                 "query": query,
                 "granularity": granularity,
+                "namespace": namespace,
                 "count": len(results),
                 "results": [_format_search_result(r) for r in results],
             })
@@ -146,6 +154,7 @@ def register_all_tools(server: Any) -> None:
         semantic_weight: float = 0.5,
         granularity: str = "file",
         filter: str | None = None,
+        namespace: str | None = None,
     ) -> dict[str, Any]:
         """Perform hybrid search (semantic + keyword combined).
 
@@ -155,6 +164,7 @@ def register_all_tools(server: Any) -> None:
             semantic_weight: Weight for semantic score vs keyword (0.0-1.0, default 0.5).
             granularity: Result granularity: "file" or "chunk" (default "file").
             filter: Optional JSON string with filter criteria.
+            namespace: Optional namespace UUID to scope the search.
 
         Returns:
             SearchResult with combined scores, matches, and file paths.
@@ -170,11 +180,13 @@ def register_all_tools(server: Any) -> None:
                 semantic_weight=semantic_weight,
                 granularity=granularity,
                 filter=filter_dict,
+                namespace=namespace,
             )
             return _success_response({
                 "query": query,
                 "granularity": granularity,
                 "semantic_weight": semantic_weight,
+                "namespace": namespace,
                 "count": len(results),
                 "results": [_format_search_result(r) for r in results],
             })
@@ -507,6 +519,97 @@ def register_all_tools(server: Any) -> None:
             })
         except Exception as exc:
             return _error_response("list_folders", str(exc))
+
+    # ==================================================================
+    # Namespace tools
+    # ==================================================================
+
+    @server.tool()
+    async def create_namespace(
+        name: str,
+        description: str = "",
+    ) -> dict[str, Any]:
+        """Create a new namespace for logical partitioning.
+
+        Args:
+            name: Unique name for the namespace (max 100 chars).
+            description: Optional human-readable description.
+
+        Returns:
+            The created Namespace object with id, name, description, created_at.
+        """
+        from clawtion.interfaces.mcp.server import get_namespace_service
+
+        try:
+            service = await get_namespace_service()
+            ns = await service.create(name=name, description=description)
+            return _success_response({
+                "namespace_id": ns.namespace_id,
+                "name": ns.name,
+                "description": ns.description,
+                "created_at": ns.created_at,
+            })
+        except Exception as exc:
+            return _error_response("create_namespace", str(exc))
+
+    @server.tool()
+    async def list_namespaces() -> dict[str, Any]:
+        """List all namespaces in the vault.
+
+        Returns:
+            A list of Namespace objects with id, name, description, chunk_count.
+        """
+        from clawtion.interfaces.mcp.server import get_namespace_service
+
+        try:
+            service = await get_namespace_service()
+            namespaces = await service.list_all()
+            return _success_response({
+                "count": len(namespaces),
+                "namespaces": [
+                    {
+                        "namespace_id": ns.namespace_id,
+                        "name": ns.name,
+                        "description": ns.description,
+                        "created_at": ns.created_at,
+                        "chunk_count": ns.chunk_count,
+                    }
+                    for ns in namespaces
+                ],
+            })
+        except Exception as exc:
+            return _error_response("list_namespaces", str(exc))
+
+    @server.tool()
+    async def assign_to_namespace(
+        document_id: str,
+        namespace_id: str,
+    ) -> dict[str, Any]:
+        """Assign all chunks of a document to a namespace.
+
+        Args:
+            document_id: The document UUID to assign.
+            namespace_id: The target namespace UUID.
+
+        Returns:
+            Object with success status, document_id, namespace_id, and chunks_updated count.
+        """
+        from clawtion.interfaces.mcp.server import get_namespace_service
+
+        try:
+            service = await get_namespace_service()
+            chunks_updated = await service.assign_document(
+                document_id=document_id,
+                namespace_id=namespace_id,
+            )
+            return _success_response({
+                "success": True,
+                "document_id": document_id,
+                "namespace_id": namespace_id,
+                "chunks_updated": chunks_updated,
+            })
+        except Exception as exc:
+            return _error_response("assign_to_namespace", str(exc))
 
 
 # ---------------------------------------------------------------------------

@@ -157,12 +157,20 @@ class IndexingService:
 
         # チャンク分割
         try:
-            chunks = chunk_file(file_path, content, folder_path=folder_path)
+            chunks = chunk_file(
+                file_path, content, folder_path=folder_path, config=self._config,
+            )
         except Exception as e:
             logger.error("Chunking failed", file_path=rel_path, error=str(e))
             raise IndexingError(
                 message=f"Chunking failed for {rel_path}: {e}",
             ) from e
+
+        # 生成されたチャンクのレベルを検出
+        chunk_levels: set[str] = {c.level for c in chunks}
+        has_file_level: bool = "file" in chunk_levels
+        has_coarse_level: bool = "coarse" in chunk_levels
+        has_fine_level: bool = "fine" in chunk_levels
 
         if not chunks:
             logger.warning("No chunks generated", file_path=rel_path)
@@ -175,6 +183,9 @@ class IndexingService:
                 ext=ext,
                 snapshot=snapshot,
                 total_chunks=0,
+                has_file_level=False,
+                has_coarse_level=False,
+                has_fine_level=False,
             )
             return []
 
@@ -187,6 +198,9 @@ class IndexingService:
             ext=ext,
             snapshot=snapshot,
             total_chunks=len(chunks),
+            has_file_level=has_file_level,
+            has_coarse_level=has_coarse_level,
+            has_fine_level=has_fine_level,
         )
 
         # 既存チャンクを削除（古いチャンクをクリア）
@@ -648,22 +662,40 @@ class IndexingService:
         ext: str,
         snapshot: FileSnapshot,
         total_chunks: int,
+        has_file_level: bool = False,
+        has_coarse_level: bool = False,
+        has_fine_level: bool = False,
     ) -> None:
-        """ドキュメントレコードを UPSERT する。"""
+        """ドキュメントレコードを UPSERT する。
+
+        Args:
+            document_id: ドキュメント UUID
+            rel_path: Vault 相対パス
+            folder_path: フォルダ相対パス
+            title: ファイルタイトル（拡張子なしベース名）
+            ext: ファイル拡張子
+            snapshot: ファイルスナップショット
+            total_chunks: 全チャンク数の合計
+            has_file_level: ファイルレベルチャンクが存在するか
+            has_coarse_level: Coarse レベルチャンクが存在するか
+            has_fine_level: Fine レベルチャンクが存在するか
+        """
+
         now = datetime.now(UTC)
-        has_file_level = total_chunks > 0
 
         await self._db.execute(
             """
             INSERT INTO documents (
                 document_id, file_path, folder_path, title,
                 file_extension, file_size_bytes, content_hash,
-                total_chunks, has_file_level, last_indexed_at,
+                total_chunks, has_file_level, has_coarse_level,
+                has_fine_level, last_indexed_at,
                 created_at, updated_at
             ) VALUES (
                 :document_id, :file_path, :folder_path, :title,
                 :extension, :file_size, :content_hash,
-                :total_chunks, :has_file_level, :now,
+                :total_chunks, :has_file_level, :has_coarse_level,
+                :has_fine_level, :now,
                 :now, :now
             )
             ON CONFLICT (file_path) DO UPDATE SET
@@ -671,6 +703,8 @@ class IndexingService:
                 file_size_bytes = EXCLUDED.file_size_bytes,
                 total_chunks = EXCLUDED.total_chunks,
                 has_file_level = EXCLUDED.has_file_level,
+                has_coarse_level = EXCLUDED.has_coarse_level,
+                has_fine_level = EXCLUDED.has_fine_level,
                 last_indexed_at = EXCLUDED.last_indexed_at,
                 updated_at = EXCLUDED.updated_at
             """,
@@ -684,6 +718,8 @@ class IndexingService:
                 "content_hash": snapshot.content_hash,
                 "total_chunks": total_chunks,
                 "has_file_level": has_file_level,
+                "has_coarse_level": has_coarse_level,
+                "has_fine_level": has_fine_level,
                 "now": now,
             },
         )

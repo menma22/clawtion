@@ -22,6 +22,7 @@ from clawtion.interfaces.cli.index import index
 # Import subcommand groups (lazy when possible to avoid circular deps)
 # ---------------------------------------------------------------------------
 from clawtion.interfaces.cli.init import init
+from clawtion.interfaces.cli.namespace import namespace as namespace_group
 from clawtion.interfaces.cli.note import note
 from clawtion.interfaces.cli.search import search
 from clawtion.interfaces.cli.service import service
@@ -78,6 +79,7 @@ main.add_command(note)
 main.add_command(trash)
 main.add_command(doctor)
 main.add_command(config_cmd)
+main.add_command(namespace_group)
 
 
 # ---------------------------------------------------------------------------

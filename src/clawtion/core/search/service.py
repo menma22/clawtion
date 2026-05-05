@@ -67,9 +67,19 @@ class SearchService:
         granularity: str = "file",
         top_k: int = 10,
         filter: dict[str, Any] | None = None,
+        namespace: str | list[str] | None = None,
     ) -> SearchResult:
-        """セマンティック検索を実行する。"""
-        mf = self._dict_to_filter(filter)
+        """セマンティック検索を実行する。
+
+        Args:
+            query: 検索クエリ
+            granularity: 粒度（"file", "coarse", "fine"）
+            top_k: 上位件数
+            filter: メタデータフィルタ
+            namespace: 名前空間UUID（単一またはリストでフィルタ）
+        """
+        filter_with_ns = self._merge_namespace(filter, namespace)
+        mf = self._dict_to_filter(filter_with_ns)
         result = await self._semantic.search(
             query,
             chunk_level=granularity,
@@ -87,9 +97,19 @@ class SearchService:
         granularity: str = "file",
         top_k: int = 10,
         filter: dict[str, Any] | None = None,
+        namespace: str | list[str] | None = None,
     ) -> SearchResult:
-        """キーワード検索を実行する。"""
-        mf = self._dict_to_filter(filter)
+        """キーワード検索を実行する。
+
+        Args:
+            query: 検索クエリ
+            granularity: 粒度（"file", "coarse", "fine"）
+            top_k: 上位件数
+            filter: メタデータフィルタ
+            namespace: 名前空間UUID（単一またはリストでフィルタ）
+        """
+        filter_with_ns = self._merge_namespace(filter, namespace)
+        mf = self._dict_to_filter(filter_with_ns)
         result = await self._keyword.search(
             query,
             chunk_level=granularity,
@@ -108,9 +128,20 @@ class SearchService:
         top_k: int = 10,
         semantic_weight: float = 0.5,
         filter: dict[str, Any] | None = None,
+        namespace: str | list[str] | None = None,
     ) -> SearchResult:
-        """ハイブリッド検索（RRF融合）を実行する。"""
-        mf = self._dict_to_filter(filter)
+        """ハイブリッド検索（RRF融合）を実行する。
+
+        Args:
+            query: 検索クエリ
+            granularity: 粒度（"file", "coarse", "fine"）
+            top_k: 上位件数
+            semantic_weight: セマンティック重み
+            filter: メタデータフィルタ
+            namespace: 名前空間UUID（単一またはリストでフィルタ）
+        """
+        filter_with_ns = self._merge_namespace(filter, namespace)
+        mf = self._dict_to_filter(filter_with_ns)
         result = await self._hybrid_search.search(
             query,
             chunk_level=granularity,
@@ -391,6 +422,22 @@ class SearchService:
 
         return suggestions
 
+    @staticmethod
+    def _merge_namespace(
+        filter_dict: dict[str, Any] | None,
+        namespace: str | list[str] | None,
+    ) -> dict[str, Any] | None:
+        """Merge the ``namespace`` parameter into the filter dict.
+
+        If *filter_dict* is ``None``, a new dict is created so the
+        namespace field can be added.
+        """
+        if namespace is None:
+            return filter_dict
+        merged = dict(filter_dict) if filter_dict else {}
+        merged["namespace_id"] = namespace
+        return merged
+
     def _dict_to_filter(
         self, filter_dict: dict[str, Any] | None
     ) -> MetadataFilter | None:
@@ -405,6 +452,7 @@ class SearchService:
             date_to=filter_dict.get("date_to"),
             extension=filter_dict.get("extension"),
             custom=filter_dict.get("custom"),
+            namespace_id=filter_dict.get("namespace_id"),
         )
 
         if mf.is_empty():

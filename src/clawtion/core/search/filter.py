@@ -20,6 +20,7 @@ class MetadataFilter:
             .by_tags(["rag", "agentic"])
             .by_date_range("2026-01-01", "2026-06-01")
             .by_extension("md")
+            .by_namespace("uuid-or-name")
         )
         conditions, params = filter.to_sql_conditions()
     """
@@ -32,6 +33,7 @@ class MetadataFilter:
         date_to: str | None = None,
         extension: str | None = None,
         custom: dict[str, Any] | None = None,
+        namespace_id: str | list[str] | None = None,
     ) -> None:
         self._folder = folder
         self._tags = tags
@@ -39,6 +41,7 @@ class MetadataFilter:
         self._date_to = date_to
         self._extension = extension
         self._custom = custom or {}
+        self._namespace_id = namespace_id
 
     def by_folder(self, folder: str) -> MetadataFilter:
         """フォルダパスでフィルタする。
@@ -73,6 +76,38 @@ class MetadataFilter:
         """カスタムメタデータフィールドでフィルタする。"""
         self._custom[key] = value
         return self
+
+    def by_namespace(self, namespace_id: str | list[str] | None) -> MetadataFilter:
+        """名前空間でフィルタする。
+
+        Args:
+            namespace_id: 単一の名前空間 UUID、または複数の UUID のリスト。
+        """
+        self._namespace_id = namespace_id
+        return self
+
+    def _build_namespace_condition(
+        self, params: dict[str, Any]
+    ) -> str:
+        """名前空間フィルタの SQL 条件を構築する。"""
+        if self._namespace_id is None:
+            return ""
+
+        ids: list[str] = (
+            [self._namespace_id]
+            if isinstance(self._namespace_id, str)
+            else list(self._namespace_id)
+        )
+
+        if len(ids) == 0:
+            return ""
+
+        if len(ids) == 1:
+            params["filter_namespace_id"] = ids[0]
+            return " AND dc.namespace_id = :filter_namespace_id"
+        else:
+            params["filter_namespace_ids"] = ids
+            return " AND dc.namespace_id = ANY(:filter_namespace_ids)"
 
     def to_sql_conditions(self) -> tuple[str, dict[str, Any]]:
         """SQL WHERE 条件とパラメータを生成する。
@@ -120,6 +155,11 @@ class MetadataFilter:
 
             params[param_name] = json.dumps({key: value})
 
+        # 名前空間フィルタ
+        ns_clause = self._build_namespace_condition(params)
+        if ns_clause:
+            conditions.append(ns_clause.strip())
+
         where_clause = " AND ".join(conditions)
         if where_clause:
             where_clause = " AND " + where_clause
@@ -164,7 +204,7 @@ class MetadataFilter:
         """フィルタ条件が空かどうかを返す。"""
         return all(
             x is None or x == {} or x == []
-            for x in [self._folder, self._tags, self._date_from, self._date_to, self._extension, self._custom]
+            for x in [self._folder, self._tags, self._date_from, self._date_to, self._extension, self._custom, self._namespace_id]
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -182,6 +222,8 @@ class MetadataFilter:
             result["extension"] = self._extension
         if self._custom:
             result["custom"] = self._custom
+        if self._namespace_id is not None:
+            result["namespace_id"] = self._namespace_id
         return result
 
     def __repr__(self) -> str:

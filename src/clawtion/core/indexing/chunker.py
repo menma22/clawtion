@@ -578,22 +578,113 @@ def _try_coarse_level(
 
 
 def chunk_file(
-    file_path: str, content: str, folder_path: str = ""
+    file_path: str,
+    content: str,
+    folder_path: str = "",
+    config: dict[str, Any] | None = None,
 ) -> list[Chunk]:
     """メインエントリポイント。
 
-    Phase 1 デフォルト戦略:
+    Phase 2 デフォルト戦略 (multi_resolution enabled):
+        config で有効な全レベル (file / coarse / fine) のチャンクを生成する。
+
+    Phase 1 フォールバック (multi_resolution disabled):
         1. ファイルレベルを試行
         2. ファイルが1500トークンを超える場合、coarseレベルにフォールバック
 
     各チャンクに ``build_context()`` を適用して ``content_with_context`` を設定する。
+
+    Args:
+        file_path: ファイルの絶対パス（タイトル抽出に使用）
+        content: ファイルのテキスト内容
+        folder_path: Vault 内のフォルダ相対パス
+        config: アプリケーション設定辞書。None の場合は自動読み込み。
+
+    Returns:
+        生成された Chunk オブジェクトのリスト
     """
     from clawtion.utils.tokens import count_tokens
 
     title = os.path.splitext(os.path.basename(file_path))[0]
     token_count = count_tokens(content)
 
-    raw_data = _try_file_level(content) if token_count <= 1500 else _try_coarse_level(content)
+    cfg: dict[str, Any] = config or {}
+    if not cfg:
+        try:
+            from clawtion.config.loader import get_config
+            cfg = get_config()
+        except Exception:
+            cfg = {}
+
+    chunking_cfg: dict[str, Any] = cfg.get("chunking", {})
+    multi_config: dict[str, Any] = chunking_cfg.get("multi_resolution", {})
+    multi_enabled: bool = multi_config.get("enabled", False)
+    levels_config: dict[str, Any] = chunking_cfg.get("levels", {})
+
+    if multi_enabled:
+        # ---- Phase 2: multi-resolution chunking ----
+        file_enabled: bool = levels_config.get("file", {}).get("enabled", True)
+        coarse_enabled: bool = levels_config.get("coarse", {}).get("enabled", False)
+        fine_enabled: bool = levels_config.get("fine", {}).get("enabled", False)
+
+        all_chunks: list[Chunk] = []
+
+        if file_enabled:
+            file_cfg: dict[str, Any] = levels_config.get("file", {})
+            fc = chunk_file_level(
+                content,
+                max_tokens=file_cfg.get("max_tokens", 1500),
+            )
+            all_chunks.extend(fc)
+
+        if coarse_enabled:
+            coarse_cfg: dict[str, Any] = levels_config.get("coarse", {})
+            cc = chunk_coarse_level(
+                content,
+                target=coarse_cfg.get("target_tokens", 800),
+                max_tokens=coarse_cfg.get("max_tokens", 1500),
+            )
+            all_chunks.extend(cc)
+
+        if fine_enabled:
+            fine_cfg: dict[str, Any] = levels_config.get("fine", {})
+            fc = chunk_fine_level(
+                content,
+                target=fine_cfg.get("target_tokens", 100),
+            )
+            all_chunks.extend(fc)
+
+        if not all_chunks:
+            return []
+
+        # コンテキスト注入を全チャンクに適用
+        result: list[Chunk] = []
+        for chunk in all_chunks:
+            heading_path = chunk.heading_path
+            context = build_context(folder_path, title, heading_path, chunk.content)
+            c_hash = compute_content_hash(chunk.content.encode("utf-8"))
+            result.append(
+                Chunk(
+                    level=chunk.level,
+                    content=chunk.content,
+                    content_with_context=context,
+                    content_hash=c_hash,
+                    chunk_index=chunk.chunk_index,
+                    chunk_total=chunk.chunk_total,
+                    heading_path=heading_path,
+                    token_count=chunk.token_count,
+                    char_count=chunk.char_count,
+                )
+            )
+
+        return result
+
+    # ---- Phase 1 fallback: file → coarse ----
+    raw_data = (
+        _try_file_level(content)
+        if token_count <= 1500
+        else _try_coarse_level(content)
+    )
 
     if not raw_data:
         return []

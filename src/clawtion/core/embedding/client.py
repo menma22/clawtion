@@ -47,6 +47,10 @@ class ExtractedContent:
 class EmbeddingError(Exception):
     """Generic error raised when an embedding operation fails."""
 
+    def __init__(self, message: str = "", details: dict[str, str] | None = None) -> None:
+        super().__init__(message)
+        self.details = details or {}
+
 
 class EmbeddingRateLimitError(EmbeddingError):
     """Raised when the embedding API rate-limits the request."""

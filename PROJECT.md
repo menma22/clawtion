@@ -56,12 +56,14 @@
   - `detect_language(text)`, `is_cjk(text)`
 
 **コアIndexingService:**
-- `core/indexing/chunker.py`: 3粒度チャンキングエンジン
+- `core/indexing/chunker.py`: 3粒度チャンキングエンジン（マルチレゾリューション対応）
   - `Chunk` frozen dataclass（level, content, content_with_context, content_hash, chunk_index, chunk_total, heading_path, token_count, char_count）
   - `chunk_file_level()`: ファイル全体1チャンク、1500トークン超過時は空リスト
   - `chunk_coarse_level()`: H1/H2/H3見出しベース分割、超過時は段落フォールバック
   - `chunk_fine_level()`: pysbdによる文単位分割、target=100トークン
-  - `chunk_file()`: Phase 1エントリポイント（file→coarseフォールバック戦略）
+  - `chunk_file()`: メインエントリポイント（configパラメータ対応）
+    - Phase 2（multi_resolution enabled）: configで有効な全レベル（file/coarse/fine）を同時生成
+    - Phase 1（multi_resolution disabled）: file→coarseフォールバック戦略
   - `build_context()`: Embedding入力用コンテキスト注入（`folder: X | file: Y | section: Z | text: ...`）
   - 構造保護: コードブロック・テーブルは分割禁止、SHA-256ハッシュ
   - `merge_short_adjacent()`: 短すぎる隣接チャンクの結合（target_min=200）
@@ -84,6 +86,8 @@
   - デバウンス（2秒間隔）、除外フォルダ対応、サポート拡張子フィルタ
 - `core/indexing/service.py`: IndexingService（メインオーケストレーター）
   - `index_file()`: 完全パイプライン（hashチェック→スナップショット→chunk→dedup→embed→upsert）
+    - `chunk_file()`にconfigを渡してマルチレゾリューション対応
+    - チャンクレベル検出（file/coarse/fine） → has_*_levelフラグをDBに保存
   - `index_folder()`: フォルダ再帰indexing（.clawtion除外）
   - `reindex_file()`, `reindex_all()`: 強制再indexing
   - `delete_file()`: 論理削除 + trashテーブル保存 + chunk削除
@@ -195,9 +199,34 @@
   - 呼び出し方法（subagent_type='clawtion-knowledge'）
   - 禁止事項（MCPツール直接呼び出し禁止、一般知識で回答しない）
 
+**コア名前空間サービス（Namespace）:**
+- `core/namespace/service.py`: 論理パーティション管理サービス
+  - `NamespaceService`（Constructor DI: DatabaseManager）
+  - `create(name, description)`: 名前空間作成（一意性制約、100文字制限）
+  - `list_all()`: 全名前空間一覧（チャンク数付き）
+  - `get(namespace_id)`: 単一名前空間取得
+  - `delete(namespace_id)`: 名前空間削除（ON DELETE SET NULL）
+  - `assign_chunk(chunk_id, namespace_id)`: 単一チャンク割り当て
+  - `assign_document(document_id, namespace_id)`: ドキュメント全チャンク割り当て
+  - `get_chunks(namespace_id)`: 名前空間内全チャンク取得
+  - `NamespaceInfo` frozen dataclass（namespace_id, name, description, created_at, chunk_count）
+
+**MCP名前空間ツール:**
+- `create_namespace(name, description)`: 名前空間作成
+- `list_namespaces()`: 名前空間一覧
+- `assign_to_namespace(document_id, namespace_id)`: ドキュメント → 名前空間割り当て
+
+**CLI名前空間コマンド:**
+- `clawtion namespace create <name> [--description]`: 名前空間作成
+- `clawtion namespace list`: 名前空間一覧
+- `clawtion namespace assign <document_id> <namespace_id>`: 割り当て
+
+**検索名前空間フィルタ:**
+- 全検索（semantic/keyword/hybrid）に `namespace` パラメータ追加
+- MetadataFilter.by_namespace() で名前空間フィルタ条件構築
+- CLI `--namespace` オプション、MCPツール `namespace` パラメータ
+
 **データベースマイグレーション:**
-- `alembic.ini`: Alembic設定（sqlalchemy.urlは環境変数から）
-- `alembic/env.py`: 非同期エンジンベースのAlembic env
 - `alembic/versions/001_initial_schema.py`: 初期スキーマ作成
   - documentsテーブル（UUID PK, file_path, folder_path, title, file_extension, file_size_bytes, content_hash, tags JSONB, wikilinks JSONB, metadata JSONB, total_chunks, has_file_level/coarse/fine, last_indexed_at, is_deleted, deleted_at, created_at, updated_at）
   - document_chunksテーブル（UUID PK, document_id FK, chunk_level, chunk_index, chunk_total, parent_chunk_id self-ref FK, heading_path, page_number, content, content_with_context, content_hash, embedding vector(768), embedding_model, embedding_dimensions, embedded_at, token_count, char_count, tsvector GENERATED ALWAYS, metadata JSONB, created_at, UNIQUE(document_id, chunk_level, chunk_index)）
@@ -205,6 +234,10 @@
   - trashテーブル（trash_id PK, original_document_id, original_file_path, original_content, original_metadata JSONB, deleted_at, auto_purge_at）
   - vault_settingsテーブル（key PK, value JSONB, updated_at）
   - インデックス: HNSW on embedding, GIN on tsvector, GIN on tags, B-tree各種
+- `alembic/versions/002_namespace_support.py`: 名前空間スキーマ追加
+  - namespacesテーブル（UUID PK, name VARCHAR(100) UNIQUE, description TEXT, created_at）
+  - document_chunksにnamespace_id UUID FK追加（ON DELETE SET NULL）
+  - idx_chunks_namespace インデックス追加
 
 ### 3. 詳細アーキテクチャ
 
@@ -274,6 +307,9 @@ clawtion/
 │   │   │   ├── keyword.py                # キーワード検索（tsvector）
 │   │   │   ├── hybrid.py                # ハイブリッド検索（RRF fusion, k=60）
 │   │   │   └── service.py               # SearchService（3検索統合 + ナビゲーション）
+│   │   ├── namespace/
+│   │   │   ├── __init__.py                 # パッケージ定義
+│   │   │   └── service.py                 # 名前空間管理（CRUD + 代入 + 検索フィルタ）
 │   │   ├── note/
 │   │   │   └── service.py                # ノートCRUD（ファイルI/O + DB同期）
 │   │   └── trash/
@@ -326,6 +362,7 @@ clawtion/
 | core/search/hybrid.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/filter.py |
 | core/search/service.py | core/db/connection.py, core/embedding/client.py, utils/logging.py, search/semantic.py, search/keyword.py, search/hybrid.py, search/filter.py |
 | core/note/service.py | core/db/connection.py, core/indexing/service.py, utils/exceptions.py, utils/logging.py |
+| core/namespace/service.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
 | core/trash/service.py | core/db/connection.py, utils/exceptions.py, utils/logging.py |
 | interfaces/api/app.py | fastapi, uvicorn, pydantic, core/db/connection.py, core/embedding/gemini.py, core/search/service.py, core/note/service.py, core/trash/service.py, core/indexing/queue.py |
 | interfaces/api/routes/search.py | fastapi, pydantic, interfaces/api/app.py |
@@ -382,11 +419,21 @@ clawtion/
   - **(b) Change & Rationale:** Claude Codeのメインエージェントコンテキストを検索ノイズで汚染しないため、サブエージェント + スキルの2段階委譲アーキテクチャを採用。サブエージェントは専用コンテキストで検索を実行し、整形済みサマリーのみをメインエージェントに返す
   - **(c) Adopted Best Practice:** メインエージェント → Skill検知 → Subagent委譲 → MCPツール実行 の4段階パイプライン。インストーラは `~/.claude/agents/`、`~/.claude/skills/`、`~/.claude.json` の3箇所を自動設定
 
+- **Subject:** マルチレゾリューションチャンキング（Phase 2）
+  - **(a) Original Design (Phase 1):** `chunk_file()` はファイルトークン数に応じて単一レベルのチャンキング戦略を選択。1500トークン以下ならfileレベル、超過時はcoarseレベルにフォールバック。設定値 `multi_resolution.enabled = false`、coarse/fineレベルはデフォルト無効。
+  - **(b) Change & Rationale:** 設計書セクション4の要件に従い、3粒度（file/coarse/fine）を常時並行生成するマルチレゾリューション方式に移行。これにより、検索時に状況に応じて最適な粒度のチャンクを選択可能になる（例: 概要把握にはfileレベル、詳細調査にはfineレベル）。ただし従来のPhase 1動作も互換性のために維持（multi_resolution無効時）。
+  - **(c) Adopted Best Practice:** `chunk_file()` は `config` パラメータを受け取り、`chunking.multi_resolution.enabled` に応じて分岐。有効時は有効な全レベルのチャンク関数を直列実行し、結果をフラットリストに結合。各チャンクの `chunk_index/chunk_total` はレベル別に独立管理。context注入は全チャンクに対して統一的に適用。設定はCLIコマンド（`toggle-multi-resolution`, `enable-level`, `disable-level`）で動的に変更可能。
+
+- **Subject:** 名前空間（Namespace）論理パーティション（Phase 2）
+  - **(a) Original Design:** 単一Vault内にすべてのドキュメントとチャンクがフラットに格納されていた。論理的な分離手段はなく、マルチプロジェクト用途では複数Vaultが必要だった。
+  - **(b) Change & Rationale:** 設計書セクション17.12の要件に従い、単一Vault内で論理パーティションを実現する名前空間を導入。チャンクレベルでnamespace_id FKを持たせることで、検索時に`dc.namespace_id`フィルタでスコープを限定可能。`ON DELETE SET NULL`により名前空間削除時もチャンクデータは保持される。MetadataFilterに`by_namespace()`を追加し、既存の検索パイプラインに最小限の変更で名前空間フィルタを統合。
+  - **(c) Adopted Best Practice:** 名前空間はチャンクレベル（document_chunksテーブル）での紐付けとし、ドキュメントテーブルには直接カラムを追加しない。検索フィルタはMetadataFilterの拡張として`dc.namespace_id`のWHERE条件を生成。MCPツールとCLIは別個の命名空間コマンドグループとして提供し、既存インターフェースには`namespace`オプションパラメータとして追加。
+
 ---
 
 ## PART 3: PROJECT MANAGEMENT
 
-### 現在のフェーズ: Phase 0→1 移行（基盤構築完了、インターフェース層実装中）
+### 現在のフェーズ: Phase 2 進行中（名前空間サポート実装完了）
 
 **完了タスク:**
 - [x] プロジェクト構造の確立（src/clawtion/ パッケージ構成）
@@ -404,6 +451,24 @@ clawtion/
 - [x] Claude Code統合インストーラ（install/uninstall/is_installed）
 - [x] サブエージェントテンプレート（検索戦略、結果合成ルール含む設計書準拠）
 - [x] スキルテンプレート（トリガー条件、呼び出し方法、禁止事項含む設計書準拠）
+- [x] **Phase 2: マルチレゾリューションチャンキング**
+  - [x] `chunk_file()` のconfigパラメータ対応（multi_resolution.enabled判定）
+  - [x] 3レベル同時生成（file/coarse/fine）
+  - [x] 設定デフォルト値更新（multi_resolution/coarse/fine 全有効化）
+  - [x] `_upsert_document()` のhas_coarse_level/has_fine_levelカラム対応
+  - [x] CLI config toggle/enable/disable コマンド追加
+- [x] **Phase 2: 名前空間（Namespace）サポート**
+  - [x] Namespace SQLAlchemyモデル（namespacesテーブル）
+  - [x] DocumentChunkにnamespace_id FK追加（nullable, ON DELETE SET NULL）
+  - [x] NamespaceService（create/list/get/delete + assign_chunk/assign_document/get_chunks）
+  - [x] NamespaceInfo frozen dataclass
+  - [x] MetadataFilter.by_namespace() + 名前空間フィルタSQL生成
+  - [x] SearchService全メソッドにnamespaceパラメータ追加
+  - [x] MCPツール: create_namespace / list_namespaces / assign_to_namespace
+  - [x] CLIコマンド: clawtion namespace create/list/assign
+  - [x] CLI検索に--namespaceオプション追加
+  - [x] Alembicマイグレーション002追加
+  - [x] i18n翻訳キー追加
 
 **未完了（次のアクション）:**
 - [ ] コアDBレイヤー（connection.py, DatabaseManager実装）

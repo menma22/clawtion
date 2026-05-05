@@ -18,7 +18,7 @@ class TestDefaults:
 
     def test_chunking_section(self) -> None:
         assert "chunking" in DEFAULT_CONFIG
-        assert DEFAULT_CONFIG["chunking"]["multi_resolution"]["enabled"] is False
+        assert DEFAULT_CONFIG["chunking"]["multi_resolution"]["enabled"] is True  # Phase 2 default
 
     def test_indexing_section(self) -> None:
         assert "indexing" in DEFAULT_CONFIG

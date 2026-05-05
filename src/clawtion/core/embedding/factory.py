@@ -9,13 +9,10 @@ merged application configuration and instantiates the appropriate
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from clawtion.config.secrets import get_secret
 from clawtion.core.embedding.client import EmbeddingClient, EmbeddingError
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 

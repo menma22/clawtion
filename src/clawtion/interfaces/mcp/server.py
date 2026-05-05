@@ -76,6 +76,14 @@ async def get_search_service() -> Any:
     return SearchService(db=db, embedder=embedder)
 
 
+async def get_namespace_service() -> Any:
+    """Return a singleton NamespaceService."""
+    from clawtion.core.namespace.service import NamespaceService
+
+    db = await get_db()
+    return NamespaceService(db=db)
+
+
 async def get_note_service() -> Any:
     """Return a singleton NoteService."""
     from clawtion.core.indexing.queue import QueueManager

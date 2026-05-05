@@ -111,6 +111,9 @@ module = [
     "clawtion.interfaces.api.app",
     "clawtion.interfaces.cli.init",
     "clawtion.interfaces.api.routes.queue",
+    "clawtion.core.embedding.openai",
+    "clawtion.core.embedding.ollama",
+    "clawtion.core.namespace.service",
     "clawtion.utils.language",
     "clawtion.core.indexing.chunker",
 ]

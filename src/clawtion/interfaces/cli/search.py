@@ -1,4 +1,4 @@
-﻿"""clawtion search commands -- semantic, keyword, and hybrid search."""
+"""clawtion search commands -- semantic, keyword, and hybrid search."""
 
 from __future__ import annotations
 
@@ -90,6 +90,7 @@ def search() -> None:
 @click.option("--folder", default=None, help="Filter by folder path")
 @click.option("--tags", default=None, help="Filter by tags (comma-separated)")
 @click.option("--extension", default=None, help="Filter by file extension")
+@click.option("--namespace", default=None, help="Filter by namespace UUID")
 @async_cmd
 async def search_cmd(
     query: str,
@@ -98,6 +99,7 @@ async def search_cmd(
     folder: str | None,
     tags: str | None,
     extension: str | None,
+    namespace: str | None,
 ) -> None:
     """Search the knowledge base using semantic, keyword, or hybrid search."""
     services = await _get_search_service()
@@ -113,33 +115,36 @@ async def search_cmd(
         if extension:
             filter_dict["extension"] = extension
 
+        click.echo(f"  {t('cli.search.query_label', query=query)}")
+        if folder:
+            click.echo(f"  {t('cli.search.folder_filter', folder=folder)}")
+        if namespace:
+            click.echo(f"  Namespace: {namespace}")
+
         if mode == "semantic":
             click.echo(f"  {t('cli.search.semantic', query=query)}")
-            if folder:
-                click.echo(f"  {t('cli.search.folder_filter', folder=folder)}")
             results = await search_service.semantic_search(
                 query=query,
                 top_k=top_k,
                 filter=filter_dict or None,
+                namespace=namespace,
             )
         elif mode == "keyword":
             click.echo(f"  {t('cli.search.keyword', query=query)}")
-            if folder:
-                click.echo(f"  {t('cli.search.folder_filter', folder=folder)}")
             results = await search_service.keyword_search(
                 query=query,
                 top_k=top_k,
                 filter=filter_dict or None,
+                namespace=namespace,
             )
         else:
             click.echo(f"  {t('cli.search.hybrid', query=query)}")
-            if folder:
-                click.echo(f"  {t('cli.search.folder_filter', folder=folder)}")
             results = await search_service.hybrid_search(
                 query=query,
                 top_k=top_k,
                 semantic_weight=0.5,
                 filter=filter_dict or None,
+                namespace=namespace,
             )
 
         _format_results(results, query, mode or "hybrid")

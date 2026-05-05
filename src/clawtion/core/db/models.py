@@ -7,7 +7,7 @@ Uses DeclarativeBase for model definitions and PGVector for embeddings.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime  # noqa: TC003 — SQLAlchemy ORM evaluates annotations at runtime
+from datetime import UTC, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
@@ -119,6 +119,55 @@ class Document(Base):
         return f"<Document id={self.document_id} path={self.file_path!r}>"
 
 
+class Namespace(Base):
+    """A logical partition within a vault for grouping documents/chunks.
+
+    Namespaces provide a way to organise content into isolated logical
+    groups within a single vault, enabling multi-project or multi-tenant
+    use cases without requiring separate vaults.
+    """
+
+    __tablename__ = "namespaces"
+
+    namespace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False,
+    )
+    description: Mapped[str] = mapped_column(
+        Text, default="", nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    # -- Relationships -------------------------------------------------------
+    chunks: Mapped[list[DocumentChunk]] = relationship(
+        "DocumentChunk",
+        back_populates="namespace",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Namespace id={self.namespace_id} name={self.name!r}>"
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "namespace_id": str(self.namespace_id),
+            "name": self.name,
+            "description": self.description,
+            "created_at": (
+                self.created_at.isoformat()
+                if hasattr(self.created_at, "isoformat")
+                else str(self.created_at)
+            ),
+        }
+
+
 class DocumentChunk(Base):
     """A single chunk of text extracted from a document at a specific level.
 
@@ -151,6 +200,12 @@ class DocumentChunk(Base):
         nullable=True,
         index=True,
     )
+    namespace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("namespaces.namespace_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     heading_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -178,6 +233,9 @@ class DocumentChunk(Base):
     # -- Relationships -------------------------------------------------------
     document: Mapped[Document] = relationship(
         "Document", back_populates="chunks",
+    )
+    namespace: Mapped[Namespace | None] = relationship(
+        "Namespace", back_populates="chunks",
     )
     parent_chunk: Mapped[DocumentChunk | None] = relationship(
         "DocumentChunk",

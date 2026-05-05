@@ -22,7 +22,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     # ===== Embedding settings =====
     "embedding": {
-        "provider": "gemini",
+        "provider": "gemini",  # gemini | openai | ollama
         "model": "gemini-embedding-2-preview",
         "output_dimensionality": 768,  # 768 | 1536 | 3072
         "task_type": {
@@ -38,11 +38,22 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "initial_wait_seconds": 4,
             "max_wait_seconds": 60,
         },
+        # ===== OpenAI provider settings =====
+        "openai": {
+            "model": "text-embedding-3-small",
+            "dimensions": 1536,
+        },
+        # ===== Ollama provider settings =====
+        "ollama": {
+            "base_url": "http://localhost:11434",
+            "model": "nomic-embed-text",
+            "dimensions": 768,
+        },
     },
     # ===== Chunking settings =====
     "chunking": {
         "multi_resolution": {
-            "enabled": False,
+            "enabled": True,  # Phase 2: multi-resolution chunking
         },
         "levels": {
             "file": {
@@ -50,14 +61,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "max_tokens": 1500,
             },
             "coarse": {
-                "enabled": False,
+                "enabled": True,  # Phase 2: enabled by default
                 "strategy": "heading-based",
                 "target_tokens": 800,
                 "max_tokens": 1500,
                 "merge_short_sections": True,
             },
             "fine": {
-                "enabled": False,
+                "enabled": True,  # Phase 2: enabled by default
                 "strategy": "sentence-based",
                 "target_tokens": 100,
                 "respect_paragraph_boundary": True,

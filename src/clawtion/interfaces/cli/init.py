@@ -66,7 +66,8 @@ def _start_docker_compose(project_dir: str | Path) -> bool:
             if health.stdout.strip() == "healthy":
                 click.echo(click.style(f"  {t('cli.init.db_started')}", fg="green"))
                 return True
-            asyncio.sleep(2)
+            import time
+            time.sleep(2)
 
         click.echo(click.style("  Database health check timed out.", fg="yellow"))
         return True

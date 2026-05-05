@@ -36,6 +36,7 @@ class HybridSearch:
     RRF_K: int = 60
 
     def __init__(self, db: DatabaseManager, embedder: EmbeddingClient) -> None:
+        self._db = db
         self._semantic = SemanticSearch(db, embedder)
         self._keyword = KeywordSearch(db)
 

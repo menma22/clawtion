@@ -77,7 +77,7 @@ def _resolve_paths(cfg: dict[str, Any]) -> dict[str, Any]:
         if isinstance(value, dict):
             resolved[key] = _resolve_paths(value)
         elif isinstance(value, str) and ("~" in value or "$" in value):
-            resolved[key] = os.path.expandvars(os.path.expanduser(value))
+            resolved[key] = os.path.expandvars(os.path.expanduser(value))  # type: ignore[assignment]
         else:
             resolved[key] = value
     return resolved

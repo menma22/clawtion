@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from clawton.utils.logging import get_logger
+from clawtion.utils.logging import get_logger
 
 from clawtion.utils.exceptions import ClawtionError
 

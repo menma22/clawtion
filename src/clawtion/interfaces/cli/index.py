@@ -86,7 +86,7 @@ async def index_cmd(path: str | None, batch: bool, force: bool) -> None:
 
         if os.path.isfile(resolved):
             click.echo(f"  {t('cli.indexing.indexing_file', filename=resolved)}")
-            with click.progressbar(length=1, label="Indexing") as bar:
+            with click.progressbar(length=1, label="Indexing") as bar:  # type: ignore[var-annotated]
                 await indexing_service.index_file(resolved, force=force)
                 bar.update(1)
             click.echo(click.style(t("cli.general.success"), fg="green"))
@@ -113,7 +113,7 @@ async def index_now() -> None:
             return
 
         click.echo(f"  Processing {pending} queued items...")
-        with click.progressbar(length=pending, label="Queue") as bar:
+        with click.progressbar(length=pending, label="Queue") as bar:  # type: ignore[var-annotated]
             def progress_callback() -> None:
                 bar.update(1)
             processed = await indexing_service.process_queue(callback=progress_callback)

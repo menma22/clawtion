@@ -56,7 +56,7 @@ class TrashService:
 
         results: list[dict[str, Any]] = []
         for row in rows:
-            metadata = {}
+            metadata: dict[str, Any] = {}
             if row.get("original_metadata"):
                 metadata = (
                     row["original_metadata"]

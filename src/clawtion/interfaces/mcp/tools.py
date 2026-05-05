@@ -39,9 +39,9 @@ def _success_response(data: Any) -> dict[str, Any]:
 def _to_dict(obj: Any) -> dict[str, Any]:
     """Convert an object to a dict, preferring ``to_dict()`` if available."""
     if hasattr(obj, "to_dict"):
-        return obj.to_dict()
+        return obj.to_dict()  # type: ignore[no-any-return]
     if hasattr(obj, "model_dump"):
-        return obj.model_dump()
+        return obj.model_dump()  # type: ignore[no-any-return]
     if isinstance(obj, dict):
         return obj
     return dict(obj)

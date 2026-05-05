@@ -116,7 +116,7 @@ class IndexingService:
 
         # Vault 相対パスを計算
         rel_path = self._to_relative_path(file_path)
-        folder_path = str(Path(rel_path).parent) + "/" if Path(rel_path).parent != "." else ""
+        folder_path = str(Path(rel_path).parent) + "/" if str(Path(rel_path).parent) != "." else ""
         title = Path(rel_path).stem
         ext = Path(rel_path).suffix.lower()
 
@@ -906,7 +906,7 @@ class IndexingService:
                 try:
                     extracted = processor.extract_content(file_path)
                     if isinstance(extracted, dict):
-                        return extracted.get("text", "")
+                        return str(extracted.get("text", ""))
                     return str(extracted)
                 except Exception as e:
                     logger.warning(

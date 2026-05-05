@@ -76,7 +76,7 @@ async def _check_db_connection() -> DiagnosticResult:
         db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")
         db = DatabaseManager(db_url)
         await db.connect()
-        await db.close()
+        await db.disconnect()
         result.ok()
     except Exception as exc:
         result.fail(str(exc))
@@ -89,11 +89,13 @@ async def _check_db_schema() -> DiagnosticResult:
     try:
         from clawtion.core.db.migrations import check_migration_status
         db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")
-        status = await check_migration_status(db_url)
-        if status.get("is_current", False):
-            result.ok(f"version {status.get('current_revision', '?')}")
+        status_str = await check_migration_status(db_url)
+        if status_str == "up-to-date":
+            result.ok(status_str)
+        elif status_str.startswith("error"):
+            result.fail(status_str)
         else:
-            result.warn(f"current: {status.get('current_revision', '?')}, head: {status.get('head_revision', '?')}")
+            result.warn(status_str)
     except Exception as exc:
         result.fail(str(exc))
     return result
@@ -147,6 +149,7 @@ async def _check_claude_config() -> DiagnosticResult:
     else:
         for issue in issues:
             result.warn(issue)
+    return result
 
 
 async def _check_vault() -> DiagnosticResult:
@@ -175,7 +178,7 @@ async def _check_vault() -> DiagnosticResult:
         file_count += sum(1 for f in files if not f.startswith("."))
 
     result.ok(f"{file_count} files")
-
+    return result
 
 async def _check_disk_space() -> DiagnosticResult:
     """Check available disk space."""
@@ -207,9 +210,10 @@ async def _check_queue() -> DiagnosticResult:
         await db.connect()
 
         queue = QueueManager(db)
-        pending = await queue.count_pending()
-        failed_count = await queue.count_failed()
-        await db.close()
+        stats = await queue.get_stats()
+        pending: int = stats.get("pending", 0)
+        failed_count: int = stats.get("failed", 0)
+        await db.disconnect()
 
         if pending == 0 and failed_count == 0:
             result.ok("Queue is empty")

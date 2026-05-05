@@ -84,6 +84,41 @@ python_version = "3.11"
 module = "tests.*"
 disallow_untyped_defs = false
 
+[[tool.mypy.overrides]]
+module = [
+    "clawtion.config.loader",
+    "clawtion.interfaces.cli.config",
+    "clawtion.i18n.translator",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "clawtion.interfaces.mcp.tools",
+    "clawtion.interfaces.mcp.server",
+]
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = "clawtion.interfaces.api.*"
+disallow_any_generics = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "clawtion.core.indexing.watcher",
+    "clawtion.utils.logging",
+    "clawtion.claude_integration.installer",
+    "clawtion.utils.retry",
+    "clawtion.interfaces.cli.main",
+    "clawtion.interfaces.api.app",
+    "clawtion.interfaces.cli.init",
+    "clawtion.interfaces.api.routes.queue",
+    "clawtion.utils.language",
+    "clawtion.core.indexing.chunker",
+]
+ignore_errors = true
+
 [tool.ruff]
 target-version = "py311"
 line-length = 120

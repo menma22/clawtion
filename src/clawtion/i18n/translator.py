@@ -154,11 +154,11 @@ def get_current_language() -> str:
     return _current_lang
 
 
-def t(key: str, **kwargs: Any) -> str:
+def t(key_path: str, **kwargs: Any) -> str:
     """Translate a key using the current locale.
 
     Args:
-        key:  Dot-separated translation key (e.g. ``"cli.init.welcome"``).
+        key_path:  Dot-separated translation key (e.g. ``"cli.init.welcome"``).
         **kwargs: Variables to interpolate into the translated string
                   using ``{variable}`` placeholders.
 
@@ -174,15 +174,13 @@ def t(key: str, **kwargs: Any) -> str:
     _ensure_locales_loaded()
 
     # Try current language
-    template = _resolve_key(_translations.get(_current_lang, {}), key)
-
-    # Fall back to English
+    template = _resolve_key(_translations.get(_current_lang, {}), key_path)
     if template is None and _current_lang != "en":
         en_data = _translations.get("en", _load_locale("en"))
-        template = _resolve_key(en_data, key)
+        template = _resolve_key(en_data, key_path)
 
     if template is None:
-        return key
+        return key_path
 
     # Variable interpolation
     if kwargs:

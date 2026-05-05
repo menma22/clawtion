@@ -167,7 +167,7 @@ def create_app() -> FastAPI:
 
     # -- Request-ID middleware ------------------------------------------------
     @app.middleware("http")
-    async def add_request_id(request: Request, call_next):  # type: ignore[misc]
+    async def add_request_id(request: Request, call_next):  # type: ignore[no-untyped-def]
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
         response = await call_next(request)

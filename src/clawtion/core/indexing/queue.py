@@ -60,11 +60,7 @@ class QueueManager:
                    WHERE file_path = :file_path AND is_deleted = false""",
                 {"file_path": file_path},
             )
-            if existing:
-                resolved_doc_id = existing["document_id"]
-            else:
-                # 新規ファイル用の一時的な UUID
-                resolved_doc_id = str(uuid.uuid4())
+            resolved_doc_id = existing["document_id"] if existing else str(uuid.uuid4())
 
         queue_id = str(uuid.uuid4())
         now = datetime.now(UTC).isoformat()

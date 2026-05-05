@@ -98,9 +98,8 @@ def setup_logging(log_dir: str | Path | None = None, level: str | None = None) -
     # structlog configuration
     # ------------------------------------------------------------------
     structlog.configure(
-        processors=shared_processors
-        + [
-            # Console output: human-readable
+        processors=[
+            *shared_processors,
             structlog.dev.ConsoleRenderer(colors=True, pad_event=25),
         ],
         wrapper_class=structlog.stdlib.BoundLogger,

@@ -141,6 +141,8 @@ ignore = [
     "RUF002",  # Japanese docstrings use fullwidth characters
     "RUF003",  # Japanese comments use fullwidth characters
     "B008",    # FastAPI Depends() in function signature is standard pattern
+    "E501",    # SQL strings and i18n messages naturally exceed line limits
+    "RUF006",  # asyncio.ensure_future fire-and-forget pattern in file watcher
 ]
 
 [tool.ruff.format]

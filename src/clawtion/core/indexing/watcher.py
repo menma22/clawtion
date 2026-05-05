@@ -11,9 +11,8 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from clawtion.utils.logging import get_logger
-
 from clawtion.utils.exceptions import ClawtionError
+from clawtion.utils.logging import get_logger
 
 if TYPE_CHECKING:
     from .queue import QueueManager

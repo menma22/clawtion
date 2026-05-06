@@ -10,6 +10,7 @@ Creates and configures a FastAPI instance with:
 
 from __future__ import annotations
 
+import os
 import uuid
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
@@ -79,6 +80,33 @@ def _http_status_for(error_code: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# .env loader
+# ---------------------------------------------------------------------------
+
+def _load_dotenv() -> None:
+    """Load .env file from project root or current directory into os.environ."""
+    from pathlib import Path
+
+    # Search for .env from current dir up to project root
+    search_dir = Path.cwd()
+    for _ in range(5):
+        env_file = search_dir / ".env"
+        if env_file.exists():
+            with env_file.open(encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, _, value = line.partition("=")
+                    key, value = key.strip(), value.strip().strip('"').strip("'")
+                    if key and key not in os.environ:
+                        os.environ[key] = value
+            logger.info("dotenv_loaded", path=str(env_file))
+            return
+        search_dir = search_dir.parent
+
+
+# ---------------------------------------------------------------------------
 # Lifespan  –  initialise / tear down services
 # ---------------------------------------------------------------------------
 
@@ -88,6 +116,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """FastAPI lifespan: connect DB on start, disconnect on shutdown."""
     # ---- startup ---------------------------------------------------------
     setup_logging()
+
+    # Load .env file from project root (ensures API keys are available)
+    _load_dotenv()
 
     config = get_config()
     vault_path: str = config.get("vault", {}).get("path", "~/Documents/clawtion-vault")

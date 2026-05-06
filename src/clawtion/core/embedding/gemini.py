@@ -112,7 +112,7 @@ _QUERY_PREFIX_TEMPLATE = "task: search result | query: {query}"
 _TASK_TYPE_DOCUMENT = "RETRIEVAL_DOCUMENT"
 _TASK_TYPE_QUERY = "RETRIEVAL_QUERY"
 
-_DEFAULT_MODEL = "models/text-embedding-004"
+_DEFAULT_MODEL = "models/gemini-embedding-2"
 
 
 class GeminiEmbeddingClient:

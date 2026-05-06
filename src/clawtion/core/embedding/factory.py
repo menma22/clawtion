@@ -101,7 +101,7 @@ def _create_gemini(emb_cfg: dict[str, Any]) -> EmbeddingClient:
         use_manual_prefix=emb_cfg.get("use_manual_prefix_fallback", True),
         model_name=emb_cfg.get(
             "model",
-            "models/text-embedding-004",
+            "models/gemini-embedding-2",
         ),
     )
 

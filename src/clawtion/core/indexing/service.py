@@ -894,8 +894,7 @@ class IndexingService:
                     heading_path = EXCLUDED.heading_path,
                     token_count = EXCLUDED.token_count,
                     char_count = EXCLUDED.char_count,
-                    embedding = COALESCE(EXCLUDED.embedding, document_chunks.embedding),
-                    updated_at = EXCLUDED.created_at
+                    embedding = COALESCE(EXCLUDED.embedding, document_chunks.embedding)
                 """,
                 {
                     "chunk_id": chunk_id,

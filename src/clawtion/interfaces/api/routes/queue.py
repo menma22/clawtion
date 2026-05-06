@@ -280,15 +280,24 @@ async def metrics(
     start = _time.monotonic()
 
     stats = await queue_manager.get_stats()
-    all_notes = await note_service.list_notes(limit=0, offset=0)
 
-    total_chunks = sum(n.get("total_chunks", 0) for n in all_notes)
+    # Count total documents directly (list_notes with limit=0 returns nothing)
+    doc_count = await db.execute(
+        "SELECT COUNT(*) as cnt FROM documents WHERE is_deleted = false", {},
+    )
+    total_docs = doc_count[0]["cnt"] if doc_count else 0
+
+    # Count total chunks
+    chunk_count = await db.execute(
+        "SELECT COUNT(*) as cnt FROM document_chunks", {},
+    )
+    total_chunks = chunk_count[0]["cnt"] if chunk_count else 0
 
     elapsed_ms = (_time.monotonic() - start) * 1000.0
 
     return {
         "data": SystemMetrics(
-            total_documents=len(all_notes),
+            total_documents=total_docs,
             total_chunks=total_chunks,
             indexing_queue_pending=stats.get("pending", 0),
             indexing_queue_failed=stats.get("failed", 0),

@@ -6,6 +6,8 @@ along with chunk-level navigation (get chunks by document, neighbours, parent).
 
 from __future__ import annotations
 
+import datetime
+import uuid
 from typing import Any
 
 import structlog
@@ -89,6 +91,19 @@ class ChunkItem(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+def _serialize_search_item(raw: dict[str, Any]) -> dict[str, Any]:
+    """Convert UUID/datetime values in search results to JSON-safe types."""
+    result: dict[str, Any] = {}
+    for key, value in raw.items():
+        if isinstance(value, uuid.UUID):
+            result[key] = str(value)
+        elif isinstance(value, datetime.datetime):
+            result[key] = value.isoformat()
+        else:
+            result[key] = value
+    return result
+
+
 def _get_search_service(request: Request) -> Any:
     """FastAPI dependency: return the search service from app state."""
     return request.app.state.search_service
@@ -117,12 +132,15 @@ async def _timed_search(
     if method is None:
         raise ValidationError(message=f"Unknown search type: {search_type}")
 
-    results: list[dict[str, Any]] = await method(
+    search_result = await method(
         query=query,
         granularity=granularity,
         top_k=top_k,
-        metadata_filter=metadata_filter,
+        filter=metadata_filter,
     )
+    # SearchService methods return a SearchResult object with .results list
+    raw_results = search_result.results if hasattr(search_result, 'results') else search_result
+    results: list[dict[str, Any]] = [_serialize_search_item(r) for r in raw_results]
 
     elapsed_ms = (time.monotonic() - start) * 1000.0
 

@@ -97,7 +97,8 @@ class NoteService:
         with open(abs_path, "w", encoding="utf-8") as f:
             f.write(file_content)
 
-        content_hash = hashlib.sha256(file_bytes).hexdigest()
+        # content_hash は空にしておく。index_file が同じハッシュだとスキップしてしまうため
+        content_hash = ""
         now = datetime.now(UTC)
 
         # DB に挿入

@@ -305,10 +305,13 @@ async def list_folders(
 
     folders = await note_service.list_folders()
 
+    # Convert string paths to FolderItem dicts
+    folder_items = [{"folder_path": f, "note_count": 0} for f in folders]
+
     elapsed_ms = (time.monotonic() - start) * 1000.0
 
     return {
-        "data": folders,
+        "data": folder_items,
         "meta": {
             "total_folders": len(folders),
             "execution_time_ms": round(elapsed_ms, 2),

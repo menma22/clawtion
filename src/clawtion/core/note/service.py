@@ -129,15 +129,22 @@ class NoteService:
         )
 
         # 自動 indexing をトリガー
-        if self._indexing:
+        _has_indexing = self._indexing is not None
+        print(f"[CREATE DEBUG] _indexing is not None: {_has_indexing}", flush=True)
+        if _has_indexing:
+            print(f"[CREATE DEBUG] calling index_file for: {abs_path}", flush=True)
             try:
                 await self._indexing.index_file(abs_path)
+                print(f"[CREATE DEBUG] index_file SUCCESS", flush=True)
             except Exception as e:
+                print(f"[CREATE DEBUG] index_file FAILED: {e}", flush=True)
                 logger.warning(
                     "Note created but indexing failed",
                     document_id=document_id,
                     error=str(e),
                 )
+        else:
+            print(f"[CREATE DEBUG] SKIPPING indexing - service is None", flush=True)
 
         logger.info("Note created", document_id=document_id, title=title, folder=folder)
         # DBから完全なレコードを再取得して返す

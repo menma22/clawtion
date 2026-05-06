@@ -861,9 +861,10 @@ class IndexingService:
         """チャンクレコードを DB に挿入する。"""
         now = datetime.now(UTC)
 
-        embedding_json = None
-        if embedding is not None:
-            embedding_json = json.dumps(embedding)
+        embedding_value = None
+        if embedding is not None and len(embedding) > 0:
+            # pgvector expects vector literal format: [val1, val2, ...] (no JSON quotes)
+            embedding_value = f"[{', '.join(str(x) for x in embedding)}]"
 
         # メタデータ
         metadata = json.dumps({
@@ -906,7 +907,7 @@ class IndexingService:
                     "content": chunk.content,
                     "content_with_context": chunk.content_with_context,
                     "content_hash": chunk.content_hash,
-                    "embedding": embedding_json,
+                    "embedding": embedding_value,
                     "embedding_model": self._embedder.model_name if embedding is not None else "",
                     "embedding_dimensions": self._embedder.dimensions if embedding is not None else 0,
                     "token_count": chunk.token_count,

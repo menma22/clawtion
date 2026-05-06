@@ -2,7 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Underline from '@tiptap/extension-underline'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered,
   Quote, Heading1, Heading2, Heading3, Undo2, Redo2, Eye, Edit3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,13 @@ export function TipTapEditor({ content, onChange, placeholder = '"\\" で始め�
     content, editable,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   })
+
+  // Sync editor content when content prop changes externally (e.g. API fetch completes)
+  useEffect(() => {
+    if (editor && content && editor.getHTML() !== content) {
+      editor.commands.setContent(content, false)
+    }
+  }, [content, editor])
 
   if (!editor) {
     return <div className="flex items-center justify-center h-64 text-text-tertiary text-[13px]">読み込み中...</div>

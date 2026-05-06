@@ -359,7 +359,7 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_note_service()
             tag_list: list[str] = [t.strip() for t in tags.split(",")] if tags else []
-            result = await service.create_note(
+            result = await service.create(
                 title=title,
                 content=content,
                 folder=folder or "",
@@ -387,7 +387,7 @@ def register_all_tools(server: Any) -> None:
 
         try:
             service = await get_note_service()
-            note_data = await service.get_note(document_id)
+            note_data = await service.get(document_id)
             if not note_data:
                 return _success_response({
                     "found": False,
@@ -434,9 +434,9 @@ def register_all_tools(server: Any) -> None:
                     "message": "No changes requested.",
                 })
 
-            success = await service.update_note(document_id, **update_fields)
+            result = await service.update(document_id, **update_fields)
             return _success_response({
-                "success": success,
+                "success": bool(result),
                 "document_id": document_id,
             })
         except Exception as exc:
@@ -460,9 +460,9 @@ def register_all_tools(server: Any) -> None:
 
         try:
             service = await get_note_service()
-            success = await service.delete_note(document_id, permanent=permanent)
+            success = await service.delete(document_id, permanent=permanent)
             return _success_response({
-                "success": success,
+                "success": bool(success),
                 "in_trash": not permanent,
                 "document_id": document_id,
                 "permanent": permanent,

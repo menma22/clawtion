@@ -201,16 +201,16 @@ class NoteService:
     async def update(
         self,
         document_id: str,
-        content: str,
+        content: str | None = None,
         title: str | None = None,
         folder: str | None = None,
         tags: list[str] | None = None,
     ) -> dict[str, Any]:
-        """ノートの内容を更新する。"""
+        """ノートの内容を更新する。content が None の場合は本文を変更しない。"""
         # 現在のドキュメント情報を取得
         row = await self._db.execute_one(
             """
-            SELECT file_path, title, folder_path, tags FROM documents
+            SELECT file_path, title, folder_path, tags, content_hash FROM documents
             WHERE document_id = :document_id AND is_deleted = false
             """,
             {"document_id": document_id},
@@ -243,14 +243,26 @@ class NoteService:
                     os.rename(abs_path, new_abs_path)
                 abs_path = new_abs_path
 
-        # ファイル内容を更新（frontmatter付き）
-        file_content = self._build_note_content(content, tags=new_tags)
-        file_bytes = file_content.encode("utf-8")
-        with open(abs_path, "w", encoding="utf-8") as f:
-            f.write(file_content)
-
-        content_hash = hashlib.sha256(file_bytes).hexdigest()
         now = datetime.now(UTC)
+
+        if content is not None:
+            # ファイル内容を更新（frontmatter付き）
+            file_content = self._build_note_content(content, tags=new_tags)
+            file_bytes = file_content.encode("utf-8")
+            with open(abs_path, "w", encoding="utf-8") as f:
+                f.write(file_content)
+            content_hash = hashlib.sha256(file_bytes).hexdigest()
+            file_size = len(file_bytes)
+        else:
+            # 本文変更なし — 既存ファイルからハッシュ再計算
+            try:
+                with open(abs_path, "rb") as f:
+                    file_bytes = f.read()
+                content_hash = hashlib.sha256(file_bytes).hexdigest()
+                file_size = len(file_bytes)
+            except OSError:
+                content_hash = row["content_hash"] or ""
+                file_size = 0
 
         # DB を更新
         await self._db.execute(
@@ -268,7 +280,7 @@ class NoteService:
             {
                 "document_id": document_id,
                 "content_hash": content_hash,
-                "file_size_bytes": len(file_bytes),
+                "file_size_bytes": file_size,
                 "title": new_title,
                 "file_path": new_file_path,
                 "folder_path": f"{new_folder}/" if new_folder else "",
@@ -278,7 +290,7 @@ class NoteService:
         )
 
         # 自動再 indexing
-        if self._indexing:
+        if self._indexing and content is not None:
             try:
                 await self._indexing.reindex_file(abs_path)
             except Exception as e:

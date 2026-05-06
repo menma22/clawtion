@@ -74,7 +74,7 @@ async def add(title: str, content: str, folder: str | None, tags: str | None) ->
         note_service = services["note_service"]
 
         tag_list: list[str] = [t.strip() for t in tags.split(",")] if tags else []
-        result = await note_service.create_note(
+        result = await note_service.create(
             title=title,
             content=content,
             folder=folder or "",
@@ -100,7 +100,7 @@ async def get(document_id: str) -> None:
     services = await _get_note_services()
     try:
         note_service = services["note_service"]
-        note_data = await note_service.get_note(document_id)
+        note_data = await note_service.get(document_id)
 
         if not note_data:
             click.echo(click.style(f"  {t('cli.note.not_found', id=document_id)}", fg="red"))
@@ -149,8 +149,8 @@ async def update(document_id: str, content: str | None, title: str | None) -> No
             click.echo("  Nothing to update. Provide --content or --title.")
             return
 
-        success = await note_service.update_note(document_id, **update_fields)
-        if success:
+        result = await note_service.update(document_id, **update_fields)
+        if result:
             click.echo(click.style(f"  {t('cli.note.restored', id=document_id)}" if "restored" in str(update_fields) else f"  {t('cli.general.success')}", fg="green"))
         else:
             click.echo(click.style(f"  {t('cli.note.not_found', id=document_id)}", fg="red"))
@@ -168,7 +168,7 @@ async def delete(document_id: str, permanent: bool) -> None:
     try:
         note_service = services["note_service"]
 
-        success = await note_service.delete_note(document_id, permanent=permanent)
+        success = await note_service.delete(document_id, permanent=permanent)
         if success:
             if permanent:
                 click.echo(click.style(f"  {t('cli.note.permanently_deleted', file_path=document_id)}", fg="yellow"))

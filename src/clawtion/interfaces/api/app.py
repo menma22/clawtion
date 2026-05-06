@@ -122,9 +122,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     config = get_config()
     vault_path: str = config.get("vault", {}).get("path", "~/Documents/clawtion-vault")
-    db_url: str = config.get("database", {}).get(
-        "url", "postgresql://localhost:5432/clawtion"
+    db_url_default = os.environ.get(
+        "CLAWTION_DB_URL",
+        "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion",
     )
+    db_url: str = config.get("database", {}).get("url", db_url_default)
 
     # Database
     from clawtion.core.db.connection import DatabaseManager
@@ -137,7 +139,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     gemini_api_key = get_secret("gemini_api_key")
     from clawtion.core.embedding.gemini import GeminiEmbeddingClient
 
-    embedder = GeminiEmbeddingClient(api_key=gemini_api_key) if gemini_api_key else None
+    if gemini_api_key:
+        embedder = GeminiEmbeddingClient(api_key=gemini_api_key)
+        logger.info("embedder_initialized", model=embedder.model_name)
+    else:
+        embedder = None
+        logger.warning("gemini_api_key_not_set", message="Search and indexing endpoints will be unavailable.")
 
     # Services
     from clawtion.core.note.service import NoteService
@@ -147,14 +154,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from clawtion.core.indexing.service import IndexingService
 
     queue_manager = QueueManager(db)
-    indexing_service = IndexingService(
-        db=db,
-        embedder=embedder,
-        queue=queue_manager,
-        vault_path=vault_path,
-    ) if embedder else None
+    indexing_service: IndexingService | None = None
+    if embedder is not None:
+        indexing_service = IndexingService(
+            db=db,
+            embedder=embedder,
+            queue=queue_manager,
+            vault_path=vault_path,
+        )
 
-    search_service = SearchService(db, embedder)
+    search_service: SearchService | None = None
+    if embedder is not None:
+        search_service = SearchService(db, embedder)
+
     note_service = NoteService(db, vault_path, indexing_service=indexing_service)
     trash_service = TrashService(db, vault_path)
 

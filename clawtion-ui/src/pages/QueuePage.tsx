@@ -1,6 +1,7 @@
-import { RotateCw, Play, Trash2 } from 'lucide-react'
+import { RotateCw, Play, Trash2, Info } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
 import { useQueueStatus, usePendingJobs, useFailedJobs, useProcessQueue, useRetryJob, useClearFailed } from '@/hooks/useQueue'
+import { useMetrics } from '@/hooks/useSettings'
 import { useUIStore } from '@/stores/uiStore'
 import { formatRelativeTime } from '@/lib/utils'
 
@@ -8,6 +9,7 @@ export default function QueuePage() {
   const { data: statsData, isLoading: statsLoading } = useQueueStatus()
   const { data: pendingData, isLoading: pendingLoading } = usePendingJobs()
   const { data: failedData, isLoading: failedLoading } = useFailedJobs()
+  const { data: metricsData } = useMetrics()
   const processQueue = useProcessQueue()
   const retryJob = useRetryJob()
   const clearFailed = useClearFailed()
@@ -29,6 +31,18 @@ export default function QueuePage() {
           <Play size={14} />処理実行
         </button>
       </div>
+
+      {/* Metrics banner — shows actual index state */}
+      {metricsData?.data && (
+        <div className="mb-6 flex items-center gap-2 rounded-lg border border-accent/20 bg-accent-subtle px-4 py-2.5 text-[13px]">
+          <Info size={15} className="text-accent shrink-0" />
+          <span className="text-text-secondary">
+            <strong className="text-text">{metricsData.data.total_documents} docs</strong> indexed with{' '}
+            <strong className="text-text">{metricsData.data.total_chunks} chunks</strong>.
+            ノート作成時のIndexingは自動実行されます（キュー非経由）。
+          </span>
+        </div>
+      )}
 
       {statsLoading ? <div className="flex justify-center py-12"><Spinner /></div> : stats ? (
         <div className="grid grid-cols-5 gap-3 mb-8">

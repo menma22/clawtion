@@ -1,23 +1,42 @@
 import { useQueueStatus } from '@/hooks/useQueue'
-import { useVersion } from '@/hooks/useSettings'
+import { useMetrics, useVersion } from '@/hooks/useSettings'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib/utils'
 
 export function StatusBar() {
   const { data: queueData } = useQueueStatus()
+  const { data: metricsData } = useMetrics()
   const { data: versionData } = useVersion()
   const vaultPath = useSettingsStore((s) => s.vaultPath)
 
-  const stats = queueData?.data
+  const queueStats = queueData?.data
+  const metrics = metricsData?.data
   const version = versionData?.version ?? '0.1.0'
 
-  let indexingLabel = 'Idle'
-  let indexingColor = 'bg-success'
-  if (stats) {
-    if (stats.failed > 0) { indexingLabel = `${stats.failed} failed`; indexingColor = 'bg-danger' }
-    else if (stats.processing > 0) { indexingLabel = 'Indexing...'; indexingColor = 'bg-warning animate-pulse' }
-    else if (stats.pending > 0) { indexingLabel = `${stats.pending} pending`; indexingColor = 'bg-warning' }
-    else { indexingLabel = `${stats.completed} indexed` }
+  // Show actual indexing state from metrics, not just queue
+  const docCount = metrics?.total_documents ?? 0
+  const chunkCount = metrics?.total_chunks ?? 0
+  const queuePending = queueStats?.pending ?? 0
+  const queueFailed = queueStats?.failed ?? 0
+  const queueProcessing = queueStats?.processing ?? 0
+
+  let indexingLabel: string
+  let indexingColor: string
+  if (queueFailed > 0) {
+    indexingLabel = `${queueFailed} failed`
+    indexingColor = 'bg-danger'
+  } else if (queueProcessing > 0) {
+    indexingLabel = 'Indexing...'
+    indexingColor = 'bg-warning animate-pulse'
+  } else if (queuePending > 0) {
+    indexingLabel = `${queuePending} pending`
+    indexingColor = 'bg-warning'
+  } else if (chunkCount > 0) {
+    indexingLabel = `${chunkCount} chunks indexed`
+    indexingColor = 'bg-success'
+  } else {
+    indexingLabel = 'No index data'
+    indexingColor = 'bg-text-tertiary'
   }
 
   return (
@@ -27,9 +46,7 @@ export function StatusBar() {
           <div className={cn('h-1.5 w-1.5 rounded-full', indexingColor)} />
           <span>{indexingLabel}</span>
         </div>
-        {stats && (
-          <span className="text-text-tertiary/60">{stats.total} docs</span>
-        )}
+        <span className="text-text-tertiary/60">{docCount} docs</span>
       </div>
       <div className="flex items-center gap-3">
         <span className="max-w-48 truncate text-text-tertiary/70">{vaultPath}</span>

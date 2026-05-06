@@ -19,14 +19,20 @@ export default function NoteCreatePage() {
 
   const handleCreate = async () => {
     if (!title.trim()) { addToast({ type: 'warning', title: 'タイトルを入力してください' }); return }
+    console.log('[NoteCreate] Creating note:', { title: title.trim(), contentLength: content.length, folder, tags })
     try {
       const res = await createNote.mutateAsync({
         title: title.trim(), content, folder: folder.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined,
       })
+      console.log('[NoteCreate] Success:', res)
       addToast({ type: 'success', title: 'ノートを作成しました' })
       navigate(`/notes/${res.data.document_id}`)
-    } catch { addToast({ type: 'error', title: '作成に失敗しました' }) }
+    } catch (err: any) {
+      console.error('[NoteCreate] Error:', err)
+      const msg = err?.message || err?.code || '不明なエラー'
+      addToast({ type: 'error', title: '作成に失敗しました', message: msg })
+    }
   }
 
   return (

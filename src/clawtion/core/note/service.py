@@ -140,11 +140,8 @@ class NoteService:
                 )
 
         logger.info("Note created", document_id=document_id, title=title, folder=folder)
-        return {
-            "document_id": document_id,
-            "file_path": file_path,
-            "title": title,
-        }
+        # DBから完全なレコードを再取得して返す
+        return await self.get(document_id)
 
     async def get(self, document_id: str) -> dict[str, Any]:
         """指定されたノートの情報を取得する。"""

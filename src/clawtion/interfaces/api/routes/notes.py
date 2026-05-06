@@ -7,6 +7,7 @@ inside the vault, plus folder listing.
 from __future__ import annotations
 
 import datetime
+import uuid
 from typing import Any
 
 import structlog
@@ -94,10 +95,14 @@ def _serialize_note(raw: dict[str, Any]) -> dict[str, Any]:
     """Convert a raw note dict (from ORM / service) into the response format."""
     result: dict[str, Any] = {}
     for field in NoteResponse.model_fields:
-        value = raw.get(field) or raw.get(field.replace("_", ""))
+        value = raw.get(field)
+        if value is None:
+            value = raw.get(field.replace("_", ""))
         if isinstance(value, datetime.datetime):
             result[field] = value.isoformat()
-        elif isinstance(value, list):
+        elif isinstance(value, (uuid.UUID,)):
+            result[field] = str(value)
+        elif isinstance(value, (list, tuple)):
             result[field] = list(value)
         else:
             result[field] = value

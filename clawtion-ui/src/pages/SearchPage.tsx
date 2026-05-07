@@ -11,12 +11,12 @@ export default function SearchPage() {
   const query = useSearchStore((s) => s.query)
   const setQuery = useSearchStore((s) => s.setQuery)
   const searchType = useSearchStore((s) => s.searchType)
-  const granularity = useSearchStore((s) => s.granularity)
+  const getGranularity = useSearchStore((s) => s.getGranularity)
   const topK = useSearchStore((s) => s.topK)
   const folderFilter = useSearchStore((s) => s.folderFilter)
 
   const [searchRequest, setSearchRequest] = useState<{
-    query: string; granularity: typeof granularity; top_k: number
+    query: string; granularity: string; top_k: number
     metadata_filter?: { folder?: string }
   } | null>(null)
 
@@ -26,7 +26,7 @@ export default function SearchPage() {
 
   const handleSearch = () => {
     if (!query.trim()) return
-    setSearchRequest({ query: query.trim(), granularity, top_k: topK, metadata_filter: folderFilter ? { folder: folderFilter } : undefined })
+    setSearchRequest({ query: query.trim(), granularity: getGranularity(), top_k: topK, metadata_filter: folderFilter ? { folder: folderFilter } : undefined })
   }
 
   return (

@@ -67,7 +67,7 @@ def register_all_tools(server: Any) -> None:
     async def semantic_search(
         query: str,
         top_k: int = 10,
-        granularity: str = "file",
+        granularity: str = "all",
         filter: str | None = None,
         namespace: str | None = None,
     ) -> dict[str, Any]:
@@ -76,7 +76,7 @@ def register_all_tools(server: Any) -> None:
         Args:
             query: Search query text.
             top_k: Maximum number of results (default 10).
-            granularity: Result granularity: "file" or "chunk" (default "file").
+            granularity: Chunk granularity: "file", "coarse", "fine", or "all" (default "all").
             filter: Optional JSON string with filter criteria.
             namespace: Optional namespace UUID to scope the search.
 
@@ -109,7 +109,7 @@ def register_all_tools(server: Any) -> None:
     async def keyword_search(
         query: str,
         top_k: int = 10,
-        granularity: str = "file",
+        granularity: str = "all",
         filter: str | None = None,
         namespace: str | None = None,
     ) -> dict[str, Any]:
@@ -118,7 +118,7 @@ def register_all_tools(server: Any) -> None:
         Args:
             query: Search query text.
             top_k: Maximum number of results (default 10).
-            granularity: Result granularity: "file" or "chunk" (default "file").
+            granularity: Chunk granularity: "file", "coarse", "fine", or "all" (default "all").
             filter: Optional JSON string with filter criteria.
             namespace: Optional namespace UUID to scope the search.
 
@@ -152,7 +152,7 @@ def register_all_tools(server: Any) -> None:
         query: str,
         top_k: int = 10,
         semantic_weight: float = 0.5,
-        granularity: str = "file",
+        granularity: str = "all",
         filter: str | None = None,
         namespace: str | None = None,
     ) -> dict[str, Any]:
@@ -162,7 +162,7 @@ def register_all_tools(server: Any) -> None:
             query: Search query text.
             top_k: Maximum number of results (default 10).
             semantic_weight: Weight for semantic score vs keyword (0.0-1.0, default 0.5).
-            granularity: Result granularity: "file" or "chunk" (default "file").
+            granularity: Chunk granularity: "file", "coarse", "fine", or "all" (default "all").
             filter: Optional JSON string with filter criteria.
             namespace: Optional namespace UUID to scope the search.
 
@@ -229,10 +229,20 @@ def register_all_tools(server: Any) -> None:
             if extension:
                 filter_dict["extension"] = extension
 
-            results = await service.metadata_filter(**filter_dict)
+            notes = await service.list_notes(
+                folder=filter_dict.pop("folder", None),
+                limit=100,
+            )
+            # Apply remaining filters manually
+            tag_filter = filter_dict.pop("tags", None)
+            extension_filter = filter_dict.pop("extension", None)
+            if tag_filter:
+                notes = [n for n in notes if any(t in n.get("tags", []) for t in tag_filter)]
+            if extension_filter:
+                notes = [n for n in notes if n.get("file_extension") == extension_filter]
             return _success_response({
-                "count": len(results),
-                "results": [_format_metadata_result(r) for r in results],
+                "count": len(notes),
+                "results": [_format_note(n) for n in notes],
             })
         except Exception as exc:
             return _error_response("metadata_filter", str(exc))
@@ -259,7 +269,7 @@ def register_all_tools(server: Any) -> None:
 
         try:
             service = await get_search_service()
-            chunks = await service.get_chunks(document_id=document_id, level=level)
+            chunks = await service.get_file_chunks(document_id=document_id, level=level)
             return _success_response({
                 "document_id": document_id,
                 "level": level,
@@ -777,12 +787,16 @@ def _format_search_result(result: Any) -> dict[str, Any]:
         return {
             "score": result.get("score", 0.0),
             "file_path": result.get("file_path", ""),
+            "folder_path": result.get("folder_path", ""),
             "document_id": result.get("document_id", ""),
-            "heading": result.get("heading", ""),
-            "snippet": result.get("snippet", "") or result.get("content_preview", ""),
-            "content_preview": result.get("content_preview", ""),
+            "title": result.get("title", ""),
             "chunk_id": result.get("chunk_id"),
-            "level": result.get("level", "file"),
+            "chunk_level": result.get("chunk_level", "file"),
+            "chunk_index": result.get("chunk_index"),
+            "chunk_total": result.get("chunk_total"),
+            "heading_path": result.get("heading_path", ""),
+            "content": result.get("content", "")[:500],
+            "content_preview": result.get("content", "")[:200],
         }
     try:
         return _to_dict(result)

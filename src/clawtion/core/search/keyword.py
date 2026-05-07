@@ -25,6 +25,24 @@ logger = get_logger(__name__)
 _TRIGRAM_SIMILARITY_THRESHOLD = 0.10
 
 
+def _build_level_clause(chunk_level: str) -> tuple[str, dict[str, str]]:
+    """chunk_level から SQL 条件とパラメータを構築する。
+
+    "all" / "" / None → 全粒度対象（フィルタなし）。
+    "file,coarse" → IN (:cl_0, :cl_1) 条件。
+    """
+    if not chunk_level or chunk_level == "all":
+        return "", {}
+    levels = [lv.strip() for lv in chunk_level.split(",") if lv.strip()]
+    if not levels:
+        return "", {}
+    if len(levels) == 1:
+        return "AND dc.chunk_level = :chunk_level", {"chunk_level": levels[0]}
+    placeholders = ", ".join(f":cl_{i}" for i in range(len(levels)))
+    params = {f"cl_{i}": lv for i, lv in enumerate(levels)}
+    return f"AND dc.chunk_level IN ({placeholders})", params
+
+
 class KeywordSearch:
     """キーワード検索を実行する。
 
@@ -62,9 +80,7 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
-        level_clause = ""
-        if chunk_level and chunk_level != "all":
-            level_clause = "AND dc.chunk_level = :chunk_level"
+        level_clause, level_params = _build_level_clause(chunk_level)
 
         query_sql = f"""
             SELECT
@@ -97,8 +113,7 @@ class KeywordSearch:
             "query": query,
             "top_k": top_k,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         try:
@@ -165,9 +180,7 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
-        level_clause = ""
-        if chunk_level and chunk_level != "all":
-            level_clause = "AND dc.chunk_level = :chunk_level"
+        level_clause, level_params = _build_level_clause(chunk_level)
 
         query_sql = f"""
             SELECT
@@ -193,8 +206,7 @@ class KeywordSearch:
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)
@@ -243,9 +255,7 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
-        level_clause = ""
-        if chunk_level and chunk_level != "all":
-            level_clause = "AND dc.chunk_level = :chunk_level"
+        level_clause, level_params = _build_level_clause(chunk_level)
 
         exclude_clause = ""
         for i, cid in enumerate(exclude_ids):
@@ -285,8 +295,7 @@ class KeywordSearch:
             "top_k": top_k,
             "trgm_threshold": _TRIGRAM_SIMILARITY_THRESHOLD,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)
@@ -316,9 +325,7 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
-        level_clause = ""
-        if chunk_level and chunk_level != "all":
-            level_clause = "AND dc.chunk_level = :chunk_level"
+        level_clause, level_params = _build_level_clause(chunk_level)
 
         exclude_clause = ""
         for i, cid in enumerate(exclude_ids):
@@ -348,8 +355,7 @@ class KeywordSearch:
             "top_k": top_k,
             "trgm_threshold": _TRIGRAM_SIMILARITY_THRESHOLD,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)

@@ -1,12 +1,13 @@
 import { useSearchStore } from '@/stores/searchStore'
-import type { ChunkLevel } from '@/types/api'
 import { cn } from '@/lib/utils'
+
+const LEVELS = ['file', 'coarse', 'fine'] as const
 
 export function SearchFilters() {
   const searchType = useSearchStore((s) => s.searchType)
   const setSearchType = useSearchStore((s) => s.setSearchType)
-  const granularity = useSearchStore((s) => s.granularity)
-  const setGranularity = useSearchStore((s) => s.setGranularity)
+  const enabledLevels = useSearchStore((s) => s.enabledLevels)
+  const toggleLevel = useSearchStore((s) => s.toggleLevel)
   const topK = useSearchStore((s) => s.topK)
   const setTopK = useSearchStore((s) => s.setTopK)
 
@@ -29,12 +30,15 @@ export function SearchFilters() {
         ))}
       </div>
 
-      <select value={granularity} onChange={(e) => setGranularity(e.target.value as ChunkLevel)} className={selectStyle}>
-        <option value="file">File</option>
-        <option value="coarse">Coarse</option>
-        <option value="fine">Fine</option>
-        <option value="all">All</option>
-      </select>
+      <div className="flex items-center rounded-lg border border-border p-0.5">
+        {LEVELS.map((level) => (
+          <label key={level} className={radioStyle(enabledLevels[level])}>
+            <input type="checkbox" checked={enabledLevels[level]}
+              onChange={() => toggleLevel(level)} className="sr-only" />
+            {level === 'file' ? 'File' : level === 'coarse' ? 'Coarse' : 'Fine'}
+          </label>
+        ))}
+      </div>
 
       <select value={topK} onChange={(e) => setTopK(Number(e.target.value))} className={selectStyle}>
         {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n} results</option>)}

@@ -31,11 +31,15 @@ class SearchRequest(BaseModel):
 
     query: str = Field(..., min_length=1, max_length=1000, description="Search query text")
     granularity: str = Field(
-        default="file",
-        pattern=r"^(all|file|coarse|fine)$",
-        description="Chunk granularity level to search across",
+        default="all",
+        pattern=r"^(all|file|coarse|fine)(,(file|coarse|fine))*$",
+        description="Chunk granularity: file, coarse, fine, all, or comma-separated combination",
     )
     top_k: int = Field(default=10, ge=1, le=100, description="Maximum number of results")
+    semantic_weight: float = Field(
+        default=0.5, ge=0.0, le=1.0,
+        description="Weight for semantic vs keyword score (hybrid only, 0.0-1.0)",
+    )
     metadata_filter: dict[str, Any] | None = Field(
         default=None,
         description="Optional metadata filter dict (e.g. folder, tags, extension)",
@@ -116,6 +120,7 @@ async def _timed_search(
     top_k: int,
     metadata_filter: dict[str, Any] | None,
     search_service: Any,
+    semantic_weight: float = 0.5,
 ) -> tuple[list[dict[str, Any]], SearchMeta]:
     """Execute a search with timing, returning (results, meta)."""
     import time
@@ -132,12 +137,16 @@ async def _timed_search(
     if method is None:
         raise ValidationError(message=f"Unknown search type: {search_type}")
 
-    search_result = await method(
-        query=query,
-        granularity=granularity,
-        top_k=top_k,
-        filter=metadata_filter,
-    )
+    kwargs: dict[str, Any] = {
+        "query": query,
+        "granularity": granularity,
+        "top_k": top_k,
+        "filter": metadata_filter,
+    }
+    if search_type == "hybrid":
+        kwargs["semantic_weight"] = semantic_weight
+
+    search_result = await method(**kwargs)
     # SearchService methods return a SearchResult object with .results list
     raw_results = search_result.results if hasattr(search_result, 'results') else search_result
     results: list[dict[str, Any]] = [_serialize_search_item(r) for r in raw_results]
@@ -222,6 +231,7 @@ async def hybrid_search(
         body.top_k,
         body.metadata_filter,
         search_service,
+        semantic_weight=body.semantic_weight,
     )
     return {"data": [SearchResultItem(**r) for r in results], "meta": meta.model_dump()}
 

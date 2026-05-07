@@ -21,6 +21,20 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
+def _build_level_clause(chunk_level: str) -> tuple[str, dict[str, str]]:
+    """chunk_level から SQL 条件とパラメータを構築する。"""
+    if not chunk_level or chunk_level == "all":
+        return "", {}
+    levels = [lv.strip() for lv in chunk_level.split(",") if lv.strip()]
+    if not levels:
+        return "", {}
+    if len(levels) == 1:
+        return "AND dc.chunk_level = :chunk_level", {"chunk_level": levels[0]}
+    placeholders = ", ".join(f":cl_{i}" for i in range(len(levels)))
+    params = {f"cl_{i}": lv for i, lv in enumerate(levels)}
+    return f"AND dc.chunk_level IN ({placeholders})", params
+
+
 class SemanticSearch:
     """セマンティック（ベクトル）検索を実行する。
 
@@ -82,11 +96,7 @@ class SemanticSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
-        # chunk_level: "all" / None → search all levels; otherwise filter.
-        # Use a dedicated param to avoid asyncpg AmbiguousParameterError.
-        level_clause = ""
-        if chunk_level and chunk_level != "all":
-            level_clause = "AND dc.chunk_level = :chunk_level"
+        level_clause, level_params = _build_level_clause(chunk_level)
 
         # メインクエリ
         query_sql = f"""
@@ -119,8 +129,7 @@ class SemanticSearch:
             "query_embedding": embedding_json,
             "top_k": top_k,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         try:
@@ -199,8 +208,7 @@ class SemanticSearch:
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }
-        if chunk_level and chunk_level != "all":
-            params["chunk_level"] = chunk_level
+        params.update(level_params)
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)

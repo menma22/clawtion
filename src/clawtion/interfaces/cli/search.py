@@ -90,6 +90,8 @@ def search() -> None:
 @click.option("--top-k", "top_k", default=10, type=int, show_default=True, help="Number of results")
 @click.option("--folder", default=None, help="Filter by folder path")
 @click.option("--tags", default=None, help="Filter by tags (comma-separated)")
+@click.option("--date-from", default=None, help="Filter by modification date (ISO 8601, start)")
+@click.option("--date-to", default=None, help="Filter by modification date (ISO 8601, end)")
 @click.option("--extension", default=None, help="Filter by file extension")
 @click.option("--namespace", default=None, help="Filter by namespace UUID")
 @async_cmd
@@ -100,6 +102,8 @@ async def search_cmd(
     top_k: int,
     folder: str | None,
     tags: str | None,
+    date_from: str | None,
+    date_to: str | None,
     extension: str | None,
     namespace: str | None,
 ) -> None:
@@ -114,6 +118,10 @@ async def search_cmd(
             filter_dict["folder"] = folder
         if tags:
             filter_dict["tags"] = [t.strip() for t in tags.split(",")]
+        if date_from:
+            filter_dict["date_from"] = date_from
+        if date_to:
+            filter_dict["date_to"] = date_to
         if extension:
             filter_dict["extension"] = extension
 

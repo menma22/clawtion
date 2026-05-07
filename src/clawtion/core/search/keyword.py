@@ -3,6 +3,9 @@
 PostgreSQL の ``tsvector`` / ``tsquery`` を使用して BM25 近似の
 全文テキスト検索を実行する。``plainto_tsquery`` でユーザークエリを
 パースし、``ts_rank_cd`` でスコアリングする。
+
+tsvector で十分な結果が得られなかった場合、pg_trgm の ``similarity()``
+による部分一致検索で補完する（英語の部分一致・日本語の文字列内一致に対応）。
 """
 
 from __future__ import annotations
@@ -19,12 +22,14 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+_TRIGRAM_SIMILARITY_THRESHOLD = 0.10
+
 
 class KeywordSearch:
     """キーワード検索を実行する。
 
-    PostgreSQL の ``tsvector`` 全文検索を使用し、
-    正確な単語・フレーズの一致に基づく検索結果を返す。
+    PostgreSQL の ``tsvector`` 全文検索に加え、
+    pg_trgm による部分一致検索で補完する。
     """
 
     RRF_K: int = 60
@@ -114,8 +119,25 @@ class KeywordSearch:
             }
 
         results: list[dict[str, Any]] = []
+        tsvector_ids: set[str] = set()
         for row in rows:
-            results.append(self._row_to_result(row))
+            r = self._row_to_result(row)
+            results.append(r)
+            tsvector_ids.add(r["chunk_id"])
+
+        # tsvector で十分な件数が取れなかった場合、trigram で補完
+        if len(results) < top_k:
+            try:
+                trigram_results = await self._search_trigram(
+                    query=query,
+                    chunk_level=chunk_level,
+                    top_k=top_k - len(results),
+                    metadata_filter=metadata_filter,
+                    exclude_ids=tsvector_ids,
+                )
+                results.extend(trigram_results)
+            except Exception as e:
+                logger.warning("Trigram search supplement failed", error=str(e))
 
         execution_time_ms = int((time.time() - start_time) * 1000)
         context = self._build_context(
@@ -176,7 +198,7 @@ class KeywordSearch:
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)
-        return [
+        base_results: list[dict[str, Any]] = [
             {
                 "chunk_id": row["chunk_id"],
                 "document_id": row["document_id"],
@@ -187,6 +209,162 @@ class KeywordSearch:
             }
             for row in rows
         ]
+
+        # tsvector で十分な件数が取れなかった場合、trigram で補完
+        if len(base_results) < top_k:
+            tsvector_ids = {r["chunk_id"] for r in base_results}
+            trigram_rows = await self._search_trigram_raw(
+                query=query,
+                chunk_level=chunk_level,
+                top_k=top_k - len(base_results),
+                metadata_filter=metadata_filter,
+                exclude_ids=tsvector_ids,
+                start_rank=len(base_results) + 1,
+            )
+            base_results.extend(trigram_rows)
+
+        return base_results
+
+    async def _search_trigram(
+        self,
+        query: str,
+        chunk_level: str,
+        top_k: int,
+        metadata_filter: MetadataFilter | None,
+        exclude_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        """pg_trgm similarity による部分一致検索。
+
+        tsvector で十分な結果が得られなかった場合の補完として使用。
+        similarity(content, query) で類似度を計算し閾値以上を返す。
+        """
+        filter_clause = ""
+        filter_params: dict[str, Any] = {}
+        if metadata_filter is not None and not metadata_filter.is_empty():
+            filter_clause, filter_params = metadata_filter.to_sql_conditions()
+
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
+        exclude_clause = ""
+        for i, cid in enumerate(exclude_ids):
+            key = f"ex_{i}"
+            filter_params[key] = cid
+            exclude_clause += f" AND dc.chunk_id != :{key}"
+
+        query_sql = f"""
+            SELECT
+                dc.chunk_id,
+                dc.document_id,
+                dc.content,
+                dc.content_with_context,
+                dc.chunk_level,
+                dc.chunk_index,
+                dc.chunk_total,
+                dc.heading_path,
+                dc.token_count,
+                dc.char_count,
+                d.file_path,
+                d.folder_path,
+                d.title,
+                word_similarity(:query, dc.content) AS keyword_score
+            FROM document_chunks dc
+            JOIN documents d ON d.document_id = dc.document_id
+            WHERE d.is_deleted = false
+              AND word_similarity(:query, dc.content) > :trgm_threshold
+              {level_clause}
+              {filter_clause}
+              {exclude_clause}
+            ORDER BY keyword_score DESC
+            LIMIT :top_k
+        """
+
+        params: dict[str, Any] = {
+            "query": query,
+            "top_k": top_k,
+            "trgm_threshold": _TRIGRAM_SIMILARITY_THRESHOLD,
+        }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
+        params.update(filter_params)
+
+        rows = await self._db.execute(query_sql, params)
+        results: list[dict[str, Any]] = []
+        for row in rows:
+            r = self._row_to_result(row)
+            r["keyword_score"] = float(row["keyword_score"])
+            r["score"] = float(row["keyword_score"])
+            results.append(r)
+        return results
+
+    async def _search_trigram_raw(
+        self,
+        query: str,
+        chunk_level: str,
+        top_k: int,
+        metadata_filter: MetadataFilter | None,
+        exclude_ids: set[str],
+        start_rank: int,
+    ) -> list[dict[str, Any]]:
+        """trigram 検索の生結果（HybridSearch 用内部API）。
+
+        rank は tsvector 結果の続き番号を割り当てる。
+        """
+        filter_clause = ""
+        filter_params: dict[str, Any] = {}
+        if metadata_filter is not None and not metadata_filter.is_empty():
+            filter_clause, filter_params = metadata_filter.to_sql_conditions()
+
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
+        exclude_clause = ""
+        for i, cid in enumerate(exclude_ids):
+            key = f"rex_{i}"
+            filter_params[key] = cid
+            exclude_clause += f" AND dc.chunk_id != :{key}"
+
+        query_sql = f"""
+            SELECT
+                dc.chunk_id,
+                dc.document_id,
+                dc.chunk_level,
+                word_similarity(:query, dc.content) AS keyword_score
+            FROM document_chunks dc
+            JOIN documents d ON d.document_id = dc.document_id
+            WHERE d.is_deleted = false
+              AND word_similarity(:query, dc.content) > :trgm_threshold
+              {level_clause}
+              {filter_clause}
+              {exclude_clause}
+            ORDER BY keyword_score DESC
+            LIMIT :top_k
+        """
+
+        params: dict[str, Any] = {
+            "query": query,
+            "top_k": top_k,
+            "trgm_threshold": _TRIGRAM_SIMILARITY_THRESHOLD,
+        }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
+        params.update(filter_params)
+
+        rows = await self._db.execute(query_sql, params)
+        results: list[dict[str, Any]] = []
+        for i, row in enumerate(rows):
+            rank = start_rank + i
+            results.append({
+                "chunk_id": row["chunk_id"],
+                "document_id": row["document_id"],
+                "chunk_level": row["chunk_level"],
+                "rank_keyword": rank,
+                "rrf_score_keyword": 1.0 / (self.RRF_K + rank),
+                "keyword_score": float(row["keyword_score"]),
+            })
+        return results
 
     def _row_to_result(self, row: Any) -> dict[str, Any]:
         """DB 行を結果 dict に変換する。"""

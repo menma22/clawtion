@@ -86,6 +86,7 @@ def search() -> None:
 @click.option("--semantic", "mode", flag_value="semantic", help="Use semantic vector search")
 @click.option("--keyword", "mode", flag_value="keyword", help="Use keyword full-text search")
 @click.option("--hybrid", "mode", flag_value="hybrid", default=True, help="Use hybrid search (default)")
+@click.option("--granularity", "granularity", default="all", show_default=True, type=click.Choice(["file", "coarse", "fine", "all"]), help="Chunk granularity level")
 @click.option("--top-k", "top_k", default=10, type=int, show_default=True, help="Number of results")
 @click.option("--folder", default=None, help="Filter by folder path")
 @click.option("--tags", default=None, help="Filter by tags (comma-separated)")
@@ -95,6 +96,7 @@ def search() -> None:
 async def search_cmd(
     query: str,
     mode: str,
+    granularity: str,
     top_k: int,
     folder: str | None,
     tags: str | None,
@@ -125,6 +127,7 @@ async def search_cmd(
             click.echo(f"  {t('cli.search.semantic', query=query)}")
             results = await search_service.semantic_search(
                 query=query,
+                granularity=granularity,
                 top_k=top_k,
                 filter=filter_dict or None,
                 namespace=namespace,
@@ -133,6 +136,7 @@ async def search_cmd(
             click.echo(f"  {t('cli.search.keyword', query=query)}")
             results = await search_service.keyword_search(
                 query=query,
+                granularity=granularity,
                 top_k=top_k,
                 filter=filter_dict or None,
                 namespace=namespace,
@@ -141,6 +145,7 @@ async def search_cmd(
             click.echo(f"  {t('cli.search.hybrid', query=query)}")
             results = await search_service.hybrid_search(
                 query=query,
+                granularity=granularity,
                 top_k=top_k,
                 semantic_weight=0.5,
                 filter=filter_dict or None,

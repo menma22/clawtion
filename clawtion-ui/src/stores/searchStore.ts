@@ -19,7 +19,7 @@ interface SearchStore {
 export const useSearchStore = create<SearchStore>((set) => ({
   query: '',
   searchType: 'hybrid',
-  granularity: 'file',
+  granularity: 'all',
   topK: 10,
   folderFilter: null,
   setQuery: (query) => set({ query }),

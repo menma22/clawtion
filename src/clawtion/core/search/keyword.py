@@ -57,6 +57,10 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
         query_sql = f"""
             SELECT
                 dc.chunk_id,
@@ -77,8 +81,8 @@ class KeywordSearch:
             JOIN documents d ON d.document_id = dc.document_id,
                  plainto_tsquery('simple', :query) query
             WHERE dc.tsvector @@ query
-              AND (CAST(:chunk_level AS VARCHAR) IS NULL OR dc.chunk_level = :chunk_level_val)
               AND d.is_deleted = false
+              {level_clause}
               {filter_clause}
             ORDER BY keyword_score DESC
             LIMIT :top_k
@@ -86,10 +90,10 @@ class KeywordSearch:
 
         params: dict[str, Any] = {
             "query": query,
-            "chunk_level": chunk_level,
-            "chunk_level_val": chunk_level,
             "top_k": top_k,
         }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
         params.update(filter_params)
 
         try:
@@ -139,6 +143,10 @@ class KeywordSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
         query_sql = f"""
             SELECT
                 dc.chunk_id,
@@ -151,8 +159,8 @@ class KeywordSearch:
             JOIN documents d ON d.document_id = dc.document_id,
                  plainto_tsquery('simple', :query) query
             WHERE dc.tsvector @@ query
-              AND (CAST(:chunk_level AS VARCHAR) IS NULL OR dc.chunk_level = :chunk_level_val)
               AND d.is_deleted = false
+              {level_clause}
               {filter_clause}
             ORDER BY keyword_score DESC
             LIMIT :top_k
@@ -160,11 +168,11 @@ class KeywordSearch:
 
         params: dict[str, Any] = {
             "query": query,
-            "chunk_level": chunk_level,
-            "chunk_level_val": chunk_level,
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)

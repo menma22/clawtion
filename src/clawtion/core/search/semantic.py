@@ -82,6 +82,12 @@ class SemanticSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
+        # chunk_level: "all" / None → search all levels; otherwise filter.
+        # Use a dedicated param to avoid asyncpg AmbiguousParameterError.
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
         # メインクエリ
         query_sql = f"""
             SELECT
@@ -102,8 +108,8 @@ class SemanticSearch:
                 1 - (dc.embedding <=> CAST(:query_embedding AS vector)) AS similarity_score
             FROM document_chunks dc
             JOIN documents d ON d.document_id = dc.document_id
-            WHERE (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
-              AND d.is_deleted = false
+            WHERE d.is_deleted = false
+              {level_clause}
               {filter_clause}
             ORDER BY dc.embedding <=> CAST(:query_embedding AS vector)
             LIMIT :top_k
@@ -111,9 +117,10 @@ class SemanticSearch:
 
         params: dict[str, Any] = {
             "query_embedding": embedding_json,
-            "chunk_level": chunk_level,
             "top_k": top_k,
         }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
         params.update(filter_params)
 
         try:
@@ -166,6 +173,10 @@ class SemanticSearch:
         if metadata_filter is not None and not metadata_filter.is_empty():
             filter_clause, filter_params = metadata_filter.to_sql_conditions()
 
+        level_clause = ""
+        if chunk_level and chunk_level != "all":
+            level_clause = "AND dc.chunk_level = :chunk_level"
+
         query_sql = f"""
             SELECT
                 dc.chunk_id,
@@ -176,8 +187,8 @@ class SemanticSearch:
                 dc.embedding <=> CAST(:query_embedding AS vector) AS distance
             FROM document_chunks dc
             JOIN documents d ON d.document_id = dc.document_id
-            WHERE (:chunk_level IS NULL OR dc.chunk_level = :chunk_level)
-              AND d.is_deleted = false
+            WHERE d.is_deleted = false
+              {level_clause}
               {filter_clause}
             ORDER BY dc.embedding <=> CAST(:query_embedding AS vector)
             LIMIT :top_k
@@ -185,10 +196,11 @@ class SemanticSearch:
 
         params: dict[str, Any] = {
             "query_embedding": embedding_json,
-            "chunk_level": chunk_level,
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)

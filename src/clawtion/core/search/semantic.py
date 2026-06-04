@@ -208,7 +208,8 @@ class SemanticSearch:
             "top_k": top_k,
             "rrf_k": self.RRF_K,
         }
-        params.update(level_params)
+        if chunk_level and chunk_level != "all":
+            params["chunk_level"] = chunk_level
         params.update(filter_params)
 
         rows = await self._db.execute(query_sql, params)

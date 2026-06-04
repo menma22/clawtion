@@ -147,11 +147,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.warning("gemini_api_key_not_set", message="Search and indexing endpoints will be unavailable.")
 
     # Services
+    from clawtion.core.indexing.queue import QueueManager
+    from clawtion.core.indexing.service import IndexingService
     from clawtion.core.note.service import NoteService
     from clawtion.core.search.service import SearchService
     from clawtion.core.trash.service import TrashService
-    from clawtion.core.indexing.queue import QueueManager
-    from clawtion.core.indexing.service import IndexingService
 
     queue_manager = QueueManager(db)
     indexing_service: IndexingService | None = None

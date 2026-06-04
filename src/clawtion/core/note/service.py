@@ -136,7 +136,7 @@ class NoteService:
             print(f"[CREATE DEBUG] calling index_file for: {abs_path}", flush=True)
             try:
                 await self._indexing.index_file(abs_path)
-                print(f"[CREATE DEBUG] index_file SUCCESS", flush=True)
+                print("[CREATE DEBUG] index_file SUCCESS", flush=True)
             except Exception as e:
                 print(f"[CREATE DEBUG] index_file FAILED: {e}", flush=True)
                 logger.warning(
@@ -145,7 +145,7 @@ class NoteService:
                     error=str(e),
                 )
         else:
-            print(f"[CREATE DEBUG] SKIPPING indexing - service is None", flush=True)
+            print("[CREATE DEBUG] SKIPPING indexing - service is None", flush=True)
 
         logger.info("Note created", document_id=document_id, title=title, folder=folder)
         # DBから完全なレコードを再取得して返す

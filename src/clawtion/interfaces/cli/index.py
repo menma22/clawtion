@@ -134,7 +134,7 @@ async def reindex() -> None:
         indexing_service = services["indexing_service"]
 
         click.echo(f"  {t('cli.indexing.reindex_confirm', count='all')}")
-        result = await indexing_service.reindex_all()
+        await indexing_service.reindex_all()
 
         click.echo(click.style(f"  {t('cli.indexing.reindex_started')}", fg="green"))
     finally:

@@ -1,4 +1,4 @@
-﻿"""clawtion note commands -- CRUD for notes."""
+"""clawtion note commands -- CRUD for notes."""
 
 from __future__ import annotations
 
@@ -83,10 +83,12 @@ async def add(title: str, content: str, folder: str | None, tags: str | None) ->
 
         doc_id = result.get("document_id", "unknown")
         file_path = result.get("file_path", "")
-        click.echo(click.style(
-            f"  {t('cli.note.created', file_path=file_path)}",
-            fg="green",
-        ))
+        click.echo(
+            click.style(
+                f"  {t('cli.note.created', file_path=file_path)}",
+                fg="green",
+            )
+        )
         click.echo(f"  ID: {doc_id}")
     finally:
         await services["db"].disconnect()
@@ -151,7 +153,14 @@ async def update(document_id: str, content: str | None, title: str | None) -> No
 
         result = await note_service.update(document_id, **update_fields)
         if result:
-            click.echo(click.style(f"  {t('cli.note.restored', id=document_id)}" if "restored" in str(update_fields) else f"  {t('cli.general.success')}", fg="green"))
+            click.echo(
+                click.style(
+                    f"  {t('cli.note.restored', id=document_id)}"
+                    if "restored" in str(update_fields)
+                    else f"  {t('cli.general.success')}",
+                    fg="green",
+                )
+            )
         else:
             click.echo(click.style(f"  {t('cli.note.not_found', id=document_id)}", fg="red"))
     finally:

@@ -28,9 +28,7 @@ def _estimate_token_count(text: str) -> int:
     cjk_count = len(_CJK_RE.findall(text))
     non_cjk_count = len(text) - cjk_count
 
-    estimated = (non_cjk_count / _CHARS_PER_TOKEN_EN) + (
-        cjk_count / _CHARS_PER_TOKEN_JA
-    )
+    estimated = (non_cjk_count / _CHARS_PER_TOKEN_EN) + (cjk_count / _CHARS_PER_TOKEN_JA)
 
     return max(1, round(estimated))
 
@@ -78,6 +76,4 @@ def _gemini_count_tokens(text: str) -> int:
     # google-genai SDK does not expose a standalone tokenizer for
     # embedding models as of the current version. We fall back to
     # the heuristic and document this limitation.
-    raise RuntimeError(
-        "Gemini SDK token count not available for embedding models"
-    )
+    raise RuntimeError("Gemini SDK token count not available for embedding models")

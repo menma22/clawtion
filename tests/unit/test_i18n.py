@@ -1,6 +1,5 @@
 """Unit tests for internationalization module."""
 
-
 from clawtion.i18n.translator import (
     _resolve_key,
     get_current_language,

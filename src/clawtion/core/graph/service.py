@@ -281,8 +281,7 @@ class GraphService:
             An entity dict or ``None`` if not found.
         """
         row = await self._db.execute_one(
-            "SELECT entity_id, name, entity_type, description, created_at "
-            "FROM entities WHERE entity_id = :entity_id",
+            "SELECT entity_id, name, entity_type, description, created_at FROM entities WHERE entity_id = :entity_id",
             {"entity_id": entity_id},
         )
         if row is None:
@@ -293,9 +292,7 @@ class GraphService:
             "entity_type": row["entity_type"],
             "description": row["description"],
             "created_at": (
-                row["created_at"].isoformat()
-                if hasattr(row["created_at"], "isoformat")
-                else str(row["created_at"])
+                row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else str(row["created_at"])
             ),
         }
 
@@ -340,9 +337,7 @@ class GraphService:
                 "entity_type": r["entity_type"],
                 "description": r["description"],
                 "created_at": (
-                    r["created_at"].isoformat()
-                    if hasattr(r["created_at"], "isoformat")
-                    else str(r["created_at"])
+                    r["created_at"].isoformat() if hasattr(r["created_at"], "isoformat") else str(r["created_at"])
                 ),
             }
             for r in rows
@@ -542,12 +537,14 @@ class GraphService:
             relations_list.append(rel)
 
             # Build adjacency
-            adjacency.setdefault(src, []).append({
-                "entity_id": tgt,
-                "relation_type": r["relation_type"],
-                "weight": float(r["weight"]),
-                "hop": int(r["hop"]),
-            })
+            adjacency.setdefault(src, []).append(
+                {
+                    "entity_id": tgt,
+                    "relation_type": r["relation_type"],
+                    "weight": float(r["weight"]),
+                    "hop": int(r["hop"]),
+                }
+            )
 
         # Fetch entity details for all visited entities
         if visited_entity_ids:
@@ -561,7 +558,7 @@ class GraphService:
                 f"""
                 SELECT entity_id, name, entity_type, description
                 FROM entities
-                WHERE entity_id IN ({', '.join(placeholders)})
+                WHERE entity_id IN ({", ".join(placeholders)})
                 """,
                 entity_params,
             )
@@ -662,7 +659,7 @@ class GraphService:
                      ELSE r.target_entity_id
                 END
             )
-            WHERE e.entity_id IN ({', '.join(entity_placeholders)})
+            WHERE e.entity_id IN ({", ".join(entity_placeholders)})
               AND dc.chunk_id != :chunk_id
             ORDER BY dc.chunk_index
             """,
@@ -684,11 +681,13 @@ class GraphService:
                     "title": c["title"],
                     "entities": [],
                 }
-            chunk_map[cid]["entities"].append({
-                "name": c["entity_name"],
-                "entity_type": c["entity_type"],
-                "relation_type": c["relation_type"],
-            })
+            chunk_map[cid]["entities"].append(
+                {
+                    "name": c["entity_name"],
+                    "entity_type": c["entity_type"],
+                    "relation_type": c["relation_type"],
+                }
+            )
 
         logger.info(
             "Related chunks found",

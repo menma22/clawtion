@@ -37,7 +37,9 @@ class SearchRequest(BaseModel):
     )
     top_k: int = Field(default=10, ge=1, le=100, description="Maximum number of results")
     semantic_weight: float = Field(
-        default=0.5, ge=0.0, le=1.0,
+        default=0.5,
+        ge=0.0,
+        le=1.0,
         description="Weight for semantic vs keyword score (hybrid only, 0.0-1.0)",
     )
     metadata_filter: dict[str, Any] | None = Field(
@@ -148,7 +150,7 @@ async def _timed_search(
 
     search_result = await method(**kwargs)
     # SearchService methods return a SearchResult object with .results list
-    raw_results = search_result.results if hasattr(search_result, 'results') else search_result
+    raw_results = search_result.results if hasattr(search_result, "results") else search_result
     results: list[dict[str, Any]] = [_serialize_search_item(r) for r in raw_results]
 
     elapsed_ms = (time.monotonic() - start) * 1000.0

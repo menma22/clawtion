@@ -304,8 +304,7 @@ class EPUBProcessor:
     """
 
     _DEPENDENCY_HINT: ClassVar[str] = (
-        "Install optional dependencies: pip install clawtion[epub]  "
-        "(requires ebooklib and beautifulsoup4)"
+        "Install optional dependencies: pip install clawtion[epub]  (requires ebooklib and beautifulsoup4)"
     )
 
     def can_process(self, file_path: str) -> bool:
@@ -401,9 +400,7 @@ class DocxProcessor:
     is not installed.
     """
 
-    _DEPENDENCY_HINT: ClassVar[str] = (
-        "Install optional dependency: pip install python-docx"
-    )
+    _DEPENDENCY_HINT: ClassVar[str] = "Install optional dependency: pip install python-docx"
 
     def can_process(self, file_path: str) -> bool:
         return os.path.splitext(file_path)[1].lower() == ".docx"

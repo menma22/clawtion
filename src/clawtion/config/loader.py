@@ -106,11 +106,7 @@ def get_config() -> dict[str, Any]:
     # Overlay vault-specific config if vault path is known
     vault_path_str = os.environ.get("CLAWTION_VAULT") or cfg.get("vault", {}).get("path", "")
     if vault_path_str:
-        vault_config_path = (
-            Path(os.path.expandvars(os.path.expanduser(vault_path_str)))
-            / ".clawtion"
-            / "config.yaml"
-        )
+        vault_config_path = Path(os.path.expandvars(os.path.expanduser(vault_path_str))) / ".clawtion" / "config.yaml"
         vault_overrides = _load_yaml(vault_config_path)
         if vault_overrides:
             cfg = _deep_merge(cfg, vault_overrides)

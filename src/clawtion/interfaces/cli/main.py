@@ -63,9 +63,7 @@ def main(ctx: click.Context, verbose: bool) -> None:
         click.echo()
         click.echo(ctx.get_help())
         click.echo()
-        click.echo(
-            click.style(t("cli.general.version", version="0.1.0"), fg="bright_black")
-        )
+        click.echo(click.style(t("cli.general.version", version="0.1.0"), fg="bright_black"))
 
 
 # ---------------------------------------------------------------------------
@@ -130,6 +128,7 @@ def logs_cmd(tail: int, level: str | None, file: str | None) -> None:
 async def mcp_serve(port: int | None) -> None:
     """Start the MCP server for Claude Code integration."""
     from clawtion.interfaces.mcp.server import run_mcp_server
+
     await run_mcp_server()
 
 
@@ -147,6 +146,7 @@ async def api_serve(host: str, port: int, reload: bool) -> None:
     """Start the REST API server."""
     try:
         import uvicorn
+
         await uvicorn.run(
             "clawtion.interfaces.api.app:app",
             host=host,

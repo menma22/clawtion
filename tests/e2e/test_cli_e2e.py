@@ -33,9 +33,7 @@ def e2e_vault(cli_env) -> str:
         "# E2E Test Note\n\nThis is an end-to-end test note about vector search.\n",
         encoding="utf-8",
     )
-    (vault_path / "readme.md").write_text(
-        "# README\n\nClawtion knowledge base.\n", encoding="utf-8"
-    )
+    (vault_path / "readme.md").write_text("# README\n\nClawtion knowledge base.\n", encoding="utf-8")
 
     return str(vault_path)
 
@@ -45,7 +43,9 @@ class TestCLIVersion:
         """Verify --version works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "--version"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0
@@ -55,7 +55,9 @@ class TestCLIVersion:
         """Verify --help works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0
@@ -68,7 +70,9 @@ class TestCLISubcommands:
         """Verify search command help works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "search", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0
@@ -77,7 +81,9 @@ class TestCLISubcommands:
         """Verify note command help works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "note", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0 or "note" in result.stdout.lower()
@@ -86,7 +92,9 @@ class TestCLISubcommands:
         """Verify config command help works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "config", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         # config may not be directly available as a subcommand - check gracefully
@@ -96,7 +104,9 @@ class TestCLISubcommands:
         """Verify trash command help works."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "trash", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0 or "trash" in result.stdout.lower()
@@ -105,7 +115,9 @@ class TestCLISubcommands:
         """Verify doctor command runs."""
         result = subprocess.run(
             [sys.executable, "-m", "clawtion", "doctor"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         # Doctor may fail if Docker isn't available, but should run
@@ -117,7 +129,9 @@ class TestCLIModuleImport:
         """Verify the CLI module can be imported."""
         result = subprocess.run(
             [sys.executable, "-c", "from clawtion.interfaces.cli.main import main; print('OK')"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         )
         assert result.returncode == 0
@@ -137,7 +151,9 @@ class TestCLIModuleImport:
         for mod in modules:
             result = subprocess.run(
                 [sys.executable, "-c", f"import {mod}; print('OK')"],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True,
+                text=True,
+                timeout=30,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             )
             assert result.returncode == 0, f"Failed to import {mod}: {result.stderr}"
@@ -157,7 +173,9 @@ class TestCLIModuleImport:
         for mod in services:
             result = subprocess.run(
                 [sys.executable, "-c", f"import {mod}; print('OK')"],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True,
+                text=True,
+                timeout=30,
                 cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             )
             assert result.returncode == 0, f"Failed to import {mod}: {result.stderr}"

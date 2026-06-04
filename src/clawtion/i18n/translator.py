@@ -39,11 +39,7 @@ def _detect_language() -> str:
     2. OS locale setting (via Python's ``locale`` module)
     3. Default to ``"en"``
     """
-    env_lang = (
-        os.environ.get("CLAWTION_LANG")
-        or os.environ.get("LANG")
-        or os.environ.get("LC_ALL")
-    )
+    env_lang = os.environ.get("CLAWTION_LANG") or os.environ.get("LANG") or os.environ.get("LC_ALL")
     if env_lang:
         code = env_lang.split(".")[0].split("_")[0].lower()
         if code:
@@ -180,8 +176,11 @@ def set_language(lang: str) -> None:
 
 
 def get_current_language() -> str:
-    """Return the active language code."""
-    _ensure_locales_loaded()
+    """Return the active language code.
+
+    Does NOT trigger language detection — caller must have called
+    ``t()`` or ``set_language()`` first to initialise the locale.
+    """
     return _current_lang
 
 

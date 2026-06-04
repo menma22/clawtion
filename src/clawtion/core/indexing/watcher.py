@@ -229,9 +229,7 @@ class FileWatcher:
     def start(self) -> None:
         """ファイル監視を開始する。"""
         if not _WATCHDOG_AVAILABLE:
-            logger.warning(
-                "watchdog not available. Install with: pip install watchdog"
-            )
+            logger.warning("watchdog not available. Install with: pip install watchdog")
             return
 
         if self._observer is not None and self._observer.is_alive():
@@ -244,13 +242,11 @@ class FileWatcher:
                 path=self._vault_path,
             )
             raise ClawtionError(
-    code="VAULT_NOT_FOUND",
-    message=f"Vault path not found: {self._vault_path}",
-)
+                code="VAULT_NOT_FOUND",
+                message=f"Vault path not found: {self._vault_path}",
+            )
 
-        event_handler = _ClawtionEventHandler(
-            self._queue, self._vault_path, self._exclude
-        )
+        event_handler = _ClawtionEventHandler(self._queue, self._vault_path, self._exclude)
         self._observer = Observer()
         self._observer.schedule(event_handler, self._vault_path, recursive=True)
         self._observer.start()

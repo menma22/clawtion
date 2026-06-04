@@ -28,12 +28,25 @@ class TestDatabaseSchema:
         columns = {r["column_name"] for r in rows}
 
         required = {
-            "document_id", "file_path", "folder_path", "title",
-            "file_extension", "file_size_bytes", "content_hash",
-            "tags", "wikilinks", "metadata", "total_chunks",
-            "has_file_level", "has_coarse_level", "has_fine_level",
-            "last_indexed_at", "is_deleted", "deleted_at",
-            "created_at", "updated_at",
+            "document_id",
+            "file_path",
+            "folder_path",
+            "title",
+            "file_extension",
+            "file_size_bytes",
+            "content_hash",
+            "tags",
+            "wikilinks",
+            "metadata",
+            "total_chunks",
+            "has_file_level",
+            "has_coarse_level",
+            "has_fine_level",
+            "last_indexed_at",
+            "is_deleted",
+            "deleted_at",
+            "created_at",
+            "updated_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
@@ -47,11 +60,22 @@ class TestDatabaseSchema:
         columns = {r["column_name"] for r in rows}
 
         required = {
-            "chunk_id", "document_id", "chunk_level", "chunk_index",
-            "chunk_total", "content", "content_with_context",
-            "content_hash", "embedding", "embedding_model",
-            "embedding_dimensions", "token_count", "char_count",
-            "heading_path", "metadata", "created_at",
+            "chunk_id",
+            "document_id",
+            "chunk_level",
+            "chunk_index",
+            "chunk_total",
+            "content",
+            "content_with_context",
+            "content_hash",
+            "embedding",
+            "embedding_model",
+            "embedding_dimensions",
+            "token_count",
+            "char_count",
+            "heading_path",
+            "metadata",
+            "created_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
@@ -65,18 +89,26 @@ class TestDatabaseSchema:
         columns = {r["column_name"] for r in rows}
 
         required = {
-            "queue_id", "document_id", "file_path", "operation",
-            "status", "progress", "priority", "retry_count",
-            "max_retries", "last_error", "error_history",
-            "created_at", "started_at", "completed_at",
+            "queue_id",
+            "document_id",
+            "file_path",
+            "operation",
+            "status",
+            "progress",
+            "priority",
+            "retry_count",
+            "max_retries",
+            "last_error",
+            "error_history",
+            "created_at",
+            "started_at",
+            "completed_at",
         }
         assert required.issubset(columns), f"Missing columns: {required - columns}"
 
     async def test_vector_extension_installed(self, db_manager) -> None:
         """Verify pgvector extension is installed."""
-        rows = await db_manager.execute(
-            "SELECT extname FROM pg_extension WHERE extname = 'vector'", {}
-        )
+        rows = await db_manager.execute("SELECT extname FROM pg_extension WHERE extname = 'vector'", {})
         assert len(rows) == 1
         assert rows[0]["extname"] == "vector"
 
@@ -100,9 +132,7 @@ class TestDatabaseSchema:
             },
         )
 
-        row = await db_manager.execute_one(
-            "SELECT * FROM documents WHERE document_id = :id", {"id": doc_id}
-        )
+        row = await db_manager.execute_one("SELECT * FROM documents WHERE document_id = :id", {"id": doc_id})
         assert row is not None
         assert row["file_path"] == "notes/test.md"
         assert row["title"] == "test"
@@ -120,8 +150,13 @@ class TestDatabaseSchema:
                title, file_extension, file_size_bytes, content_hash)
                VALUES (:id, :path, :folder, :title, :ext, :size, :hash)""",
             {
-                "id": doc_id1, "path": "notes/unique.md", "folder": "notes/",
-                "title": "unique", "ext": "md", "size": 100, "hash": "abc",
+                "id": doc_id1,
+                "path": "notes/unique.md",
+                "folder": "notes/",
+                "title": "unique",
+                "ext": "md",
+                "size": 100,
+                "hash": "abc",
             },
         )
 
@@ -131,8 +166,13 @@ class TestDatabaseSchema:
                    title, file_extension, file_size_bytes, content_hash)
                    VALUES (:id, :path, :folder, :title, :ext, :size, :hash)""",
                 {
-                    "id": doc_id2, "path": "notes/unique.md", "folder": "notes/",
-                    "title": "unique2", "ext": "md", "size": 200, "hash": "def",
+                    "id": doc_id2,
+                    "path": "notes/unique.md",
+                    "folder": "notes/",
+                    "title": "unique2",
+                    "ext": "md",
+                    "size": 200,
+                    "hash": "def",
                 },
             )
 
@@ -143,8 +183,6 @@ class TestDatabaseSchema:
             {"key": "test_key", "value": '{"enabled": true}'},
         )
 
-        row = await db_manager.execute_one(
-            "SELECT * FROM vault_settings WHERE key = :key", {"key": "test_key"}
-        )
+        row = await db_manager.execute_one("SELECT * FROM vault_settings WHERE key = :key", {"key": "test_key"})
         assert row is not None
         assert row["key"] == "test_key"

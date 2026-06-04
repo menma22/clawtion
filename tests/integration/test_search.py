@@ -16,39 +16,61 @@ class TestSearchIntegration:
                title, file_extension, file_size_bytes, content_hash)
                VALUES (:id, :path, :folder, :title, :ext, :size, :hash)""",
             {
-                "id": doc_id, "path": "notes/search_test.md",
-                "folder": "notes/", "title": "search_test",
-                "ext": "md", "size": 500, "hash": "test_hash_001",
+                "id": doc_id,
+                "path": "notes/search_test.md",
+                "folder": "notes/",
+                "title": "search_test",
+                "ext": "md",
+                "size": 500,
+                "hash": "test_hash_001",
             },
         )
 
         # Insert test chunks
         chunks = [
             {
-                "chunk_id": str(uuid.uuid4()), "document_id": doc_id,
-                "chunk_level": "file", "chunk_index": 0, "chunk_total": 1,
+                "chunk_id": str(uuid.uuid4()),
+                "document_id": doc_id,
+                "chunk_level": "file",
+                "chunk_index": 0,
+                "chunk_total": 1,
                 "content": "Vector databases enable semantic search.",
                 "content_with_context": "file: search_test | text: Vector databases enable semantic search.",
-                "content_hash": "ch_hash_1", "embedding_model": "test-model",
-                "embedding_dimensions": 768, "token_count": 10, "char_count": 42,
+                "content_hash": "ch_hash_1",
+                "embedding_model": "test-model",
+                "embedding_dimensions": 768,
+                "token_count": 10,
+                "char_count": 42,
                 "embedding": str([0.1] * 768),
             },
             {
-                "chunk_id": str(uuid.uuid4()), "document_id": doc_id,
-                "chunk_level": "coarse", "chunk_index": 0, "chunk_total": 2,
+                "chunk_id": str(uuid.uuid4()),
+                "document_id": doc_id,
+                "chunk_level": "coarse",
+                "chunk_index": 0,
+                "chunk_total": 2,
                 "content": "PostgreSQL with pgvector supports HNSW indexing for fast vector search.",
                 "content_with_context": "file: search_test | section: Details | text: PostgreSQL with pgvector...",
-                "content_hash": "ch_hash_2", "embedding_model": "test-model",
-                "embedding_dimensions": 768, "token_count": 15, "char_count": 72,
+                "content_hash": "ch_hash_2",
+                "embedding_model": "test-model",
+                "embedding_dimensions": 768,
+                "token_count": 15,
+                "char_count": 72,
                 "embedding": str([0.2] * 768),
             },
             {
-                "chunk_id": str(uuid.uuid4()), "document_id": doc_id,
-                "chunk_level": "coarse", "chunk_index": 1, "chunk_total": 2,
+                "chunk_id": str(uuid.uuid4()),
+                "document_id": doc_id,
+                "chunk_level": "coarse",
+                "chunk_index": 1,
+                "chunk_total": 2,
                 "content": "Hybrid search combines vector and keyword ranking using RRF with k=60.",
                 "content_with_context": "file: search_test | section: Methods | text: Hybrid search...",
-                "content_hash": "ch_hash_3", "embedding_model": "test-model",
-                "embedding_dimensions": 768, "token_count": 15, "char_count": 75,
+                "content_hash": "ch_hash_3",
+                "embedding_model": "test-model",
+                "embedding_dimensions": 768,
+                "token_count": 15,
+                "char_count": 75,
                 "embedding": str([0.3] * 768),
             },
         ]
@@ -110,9 +132,13 @@ class TestSearchIntegration:
                title, file_extension, file_size_bytes, content_hash)
                VALUES (:id, :path, :folder, :title, :ext, :size, :hash)""",
             {
-                "id": str(uuid.uuid4()), "path": "tech/another.md",
-                "folder": "tech/", "title": "another",
-                "ext": "md", "size": 200, "hash": "hash_002",
+                "id": str(uuid.uuid4()),
+                "path": "tech/another.md",
+                "folder": "tech/",
+                "title": "another",
+                "ext": "md",
+                "size": 200,
+                "hash": "hash_002",
             },
         )
 
@@ -149,7 +175,6 @@ class TestSearchIntegration:
             {},
         )
         if len(rows) >= 2:
-
             # Test navigation through the search service if available
             chunk_ids = [r["chunk_id"] for r in rows]
             assert len(chunk_ids) >= 1

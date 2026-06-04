@@ -95,13 +95,15 @@ def register_all_tools(server: Any) -> None:
                 filter=filter_dict,
                 namespace=namespace,
             )
-            return _success_response({
-                "query": query,
-                "granularity": granularity,
-                "namespace": namespace,
-                "count": len(results),
-                "results": [_format_search_result(r) for r in results],
-            })
+            return _success_response(
+                {
+                    "query": query,
+                    "granularity": granularity,
+                    "namespace": namespace,
+                    "count": len(results),
+                    "results": [_format_search_result(r) for r in results],
+                }
+            )
         except Exception as exc:
             return _error_response("semantic_search", str(exc))
 
@@ -137,13 +139,15 @@ def register_all_tools(server: Any) -> None:
                 filter=filter_dict,
                 namespace=namespace,
             )
-            return _success_response({
-                "query": query,
-                "granularity": granularity,
-                "namespace": namespace,
-                "count": len(results),
-                "results": [_format_search_result(r) for r in results],
-            })
+            return _success_response(
+                {
+                    "query": query,
+                    "granularity": granularity,
+                    "namespace": namespace,
+                    "count": len(results),
+                    "results": [_format_search_result(r) for r in results],
+                }
+            )
         except Exception as exc:
             return _error_response("keyword_search", str(exc))
 
@@ -182,14 +186,16 @@ def register_all_tools(server: Any) -> None:
                 filter=filter_dict,
                 namespace=namespace,
             )
-            return _success_response({
-                "query": query,
-                "granularity": granularity,
-                "semantic_weight": semantic_weight,
-                "namespace": namespace,
-                "count": len(results),
-                "results": [_format_search_result(r) for r in results],
-            })
+            return _success_response(
+                {
+                    "query": query,
+                    "granularity": granularity,
+                    "semantic_weight": semantic_weight,
+                    "namespace": namespace,
+                    "count": len(results),
+                    "results": [_format_search_result(r) for r in results],
+                }
+            )
         except Exception as exc:
             return _error_response("hybrid_search", str(exc))
 
@@ -240,10 +246,12 @@ def register_all_tools(server: Any) -> None:
                 notes = [n for n in notes if any(t in n.get("tags", []) for t in tag_filter)]
             if extension_filter:
                 notes = [n for n in notes if n.get("file_extension") == extension_filter]
-            return _success_response({
-                "count": len(notes),
-                "results": [_format_note(n) for n in notes],
-            })
+            return _success_response(
+                {
+                    "count": len(notes),
+                    "results": [_format_note(n) for n in notes],
+                }
+            )
         except Exception as exc:
             return _error_response("metadata_filter", str(exc))
 
@@ -270,12 +278,14 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_search_service()
             chunks = await service.get_file_chunks(document_id=document_id, level=level)
-            return _success_response({
-                "document_id": document_id,
-                "level": level,
-                "count": len(chunks),
-                "chunks": [_format_chunk(c) for c in chunks],
-            })
+            return _success_response(
+                {
+                    "document_id": document_id,
+                    "level": level,
+                    "count": len(chunks),
+                    "chunks": [_format_chunk(c) for c in chunks],
+                }
+            )
         except Exception as exc:
             return _error_response("get_file_chunks", str(exc))
 
@@ -304,13 +314,15 @@ def register_all_tools(server: Any) -> None:
                 before=before,
                 after=after,
             )
-            return _success_response({
-                "anchor_chunk_id": chunk_id,
-                "before": before,
-                "after": after,
-                "count": len(chunks),
-                "chunks": [_format_chunk(c) for c in chunks],
-            })
+            return _success_response(
+                {
+                    "anchor_chunk_id": chunk_id,
+                    "before": before,
+                    "after": after,
+                    "count": len(chunks),
+                    "chunks": [_format_chunk(c) for c in chunks],
+                }
+            )
         except Exception as exc:
             return _error_response("get_neighbor_chunks", str(exc))
 
@@ -330,15 +342,19 @@ def register_all_tools(server: Any) -> None:
             service = await get_search_service()
             parent = await service.get_parent_chunk(chunk_id=chunk_id)
             if parent is None:
-                return _success_response({
+                return _success_response(
+                    {
+                        "chunk_id": chunk_id,
+                        "parent": None,
+                        "message": "No parent chunk found (already at top level).",
+                    }
+                )
+            return _success_response(
+                {
                     "chunk_id": chunk_id,
-                    "parent": None,
-                    "message": "No parent chunk found (already at top level).",
-                })
-            return _success_response({
-                "chunk_id": chunk_id,
-                "parent": _format_chunk(parent),
-            })
+                    "parent": _format_chunk(parent),
+                }
+            )
         except Exception as exc:
             return _error_response("get_parent_chunk", str(exc))
 
@@ -375,11 +391,13 @@ def register_all_tools(server: Any) -> None:
                 folder=folder or "",
                 tags=tag_list,
             )
-            return _success_response({
-                "document_id": result.get("document_id", ""),
-                "file_path": result.get("file_path", ""),
-                "title": title,
-            })
+            return _success_response(
+                {
+                    "document_id": result.get("document_id", ""),
+                    "file_path": result.get("file_path", ""),
+                    "title": title,
+                }
+            )
         except Exception as exc:
             return _error_response("add_note", str(exc))
 
@@ -399,16 +417,20 @@ def register_all_tools(server: Any) -> None:
             service = await get_note_service()
             note_data = await service.get(document_id)
             if not note_data:
-                return _success_response({
-                    "found": False,
+                return _success_response(
+                    {
+                        "found": False,
+                        "document_id": document_id,
+                        "note": None,
+                    }
+                )
+            return _success_response(
+                {
+                    "found": True,
                     "document_id": document_id,
-                    "note": None,
-                })
-            return _success_response({
-                "found": True,
-                "document_id": document_id,
-                "note": _format_note(note_data),
-            })
+                    "note": _format_note(note_data),
+                }
+            )
         except Exception as exc:
             return _error_response("get_note", str(exc))
 
@@ -439,16 +461,20 @@ def register_all_tools(server: Any) -> None:
                 update_fields["title"] = title
 
             if not update_fields:
-                return _success_response({
-                    "success": True,
-                    "message": "No changes requested.",
-                })
+                return _success_response(
+                    {
+                        "success": True,
+                        "message": "No changes requested.",
+                    }
+                )
 
             result = await service.update(document_id, **update_fields)
-            return _success_response({
-                "success": bool(result),
-                "document_id": document_id,
-            })
+            return _success_response(
+                {
+                    "success": bool(result),
+                    "document_id": document_id,
+                }
+            )
         except Exception as exc:
             return _error_response("update_note", str(exc))
 
@@ -471,12 +497,14 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_note_service()
             success = await service.delete(document_id, permanent=permanent)
-            return _success_response({
-                "success": bool(success),
-                "in_trash": not permanent,
-                "document_id": document_id,
-                "permanent": permanent,
-            })
+            return _success_response(
+                {
+                    "success": bool(success),
+                    "in_trash": not permanent,
+                    "document_id": document_id,
+                    "permanent": permanent,
+                }
+            )
         except Exception as exc:
             return _error_response("delete_note", str(exc))
 
@@ -501,13 +529,15 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_note_service()
             notes = await service.list_notes(folder=folder, limit=limit, offset=offset)
-            return _success_response({
-                "count": len(notes),
-                "limit": limit,
-                "offset": offset,
-                "folder": folder,
-                "notes": [_format_note(n) for n in notes],
-            })
+            return _success_response(
+                {
+                    "count": len(notes),
+                    "limit": limit,
+                    "offset": offset,
+                    "folder": folder,
+                    "notes": [_format_note(n) for n in notes],
+                }
+            )
         except Exception as exc:
             return _error_response("list_notes", str(exc))
 
@@ -523,10 +553,12 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_note_service()
             folders = await service.list_folders()
-            return _success_response({
-                "count": len(folders),
-                "folders": folders,
-            })
+            return _success_response(
+                {
+                    "count": len(folders),
+                    "folders": folders,
+                }
+            )
         except Exception as exc:
             return _error_response("list_folders", str(exc))
 
@@ -553,12 +585,14 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_namespace_service()
             ns = await service.create(name=name, description=description)
-            return _success_response({
-                "namespace_id": ns.namespace_id,
-                "name": ns.name,
-                "description": ns.description,
-                "created_at": ns.created_at,
-            })
+            return _success_response(
+                {
+                    "namespace_id": ns.namespace_id,
+                    "name": ns.name,
+                    "description": ns.description,
+                    "created_at": ns.created_at,
+                }
+            )
         except Exception as exc:
             return _error_response("create_namespace", str(exc))
 
@@ -574,19 +608,21 @@ def register_all_tools(server: Any) -> None:
         try:
             service = await get_namespace_service()
             namespaces = await service.list_all()
-            return _success_response({
-                "count": len(namespaces),
-                "namespaces": [
-                    {
-                        "namespace_id": ns.namespace_id,
-                        "name": ns.name,
-                        "description": ns.description,
-                        "created_at": ns.created_at,
-                        "chunk_count": ns.chunk_count,
-                    }
-                    for ns in namespaces
-                ],
-            })
+            return _success_response(
+                {
+                    "count": len(namespaces),
+                    "namespaces": [
+                        {
+                            "namespace_id": ns.namespace_id,
+                            "name": ns.name,
+                            "description": ns.description,
+                            "created_at": ns.created_at,
+                            "chunk_count": ns.chunk_count,
+                        }
+                        for ns in namespaces
+                    ],
+                }
+            )
         except Exception as exc:
             return _error_response("list_namespaces", str(exc))
 
@@ -612,15 +648,16 @@ def register_all_tools(server: Any) -> None:
                 document_id=document_id,
                 namespace_id=namespace_id,
             )
-            return _success_response({
-                "success": True,
-                "document_id": document_id,
-                "namespace_id": namespace_id,
-                "chunks_updated": chunks_updated,
-            })
+            return _success_response(
+                {
+                    "success": True,
+                    "document_id": document_id,
+                    "namespace_id": namespace_id,
+                    "chunks_updated": chunks_updated,
+                }
+            )
         except Exception as exc:
             return _error_response("assign_to_namespace", str(exc))
-
 
     # ==================================================================
     # GraphRAG tools
@@ -775,6 +812,7 @@ def _parse_filter(filter_str: str | None) -> dict[str, Any] | None:
     if not filter_str:
         return None
     import json
+
     try:
         return dict(json.loads(filter_str))
     except (json.JSONDecodeError, TypeError):
@@ -916,12 +954,14 @@ async def _get_related_chunks_impl(
             chunk_id=chunk_id,
             max_hops=max_hops,
         )
-        return _success_response({
-            "chunk_id": chunk_id,
-            "max_hops": max_hops,
-            "count": len(related),
-            "related_chunks": related,
-        })
+        return _success_response(
+            {
+                "chunk_id": chunk_id,
+                "max_hops": max_hops,
+                "count": len(related),
+                "related_chunks": related,
+            }
+        )
     except Exception as exc:
         return _error_response("get_related_chunks", str(exc))
 
@@ -939,11 +979,13 @@ async def _extract_entities_from_chunk_impl(
             result = await service.extract_and_store(chunk_id)
             return _success_response(result)
         entities = await service.extract_entities(chunk_id)
-        return _success_response({
-            "chunk_id": chunk_id,
-            "count": len(entities),
-            "entities": entities,
-        })
+        return _success_response(
+            {
+                "chunk_id": chunk_id,
+                "count": len(entities),
+                "entities": entities,
+            }
+        )
     except Exception as exc:
         return _error_response("extract_entities_from_chunk", str(exc))
 
@@ -967,11 +1009,13 @@ async def _update_note_section_mcp(
         note_service = await get_note_service()
         note_data = await note_service.get(document_id)
         if not note_data:
-            return _success_response({
-                "found": False,
-                "document_id": document_id,
-                "note": None,
-            })
+            return _success_response(
+                {
+                    "found": False,
+                    "document_id": document_id,
+                    "note": None,
+                }
+            )
         file_path = note_data["file_path"]
 
         editor = await get_note_editor()
@@ -984,6 +1028,7 @@ async def _update_note_section_mcp(
         # Re-read the updated file content and trigger re-indexing
         try:
             import os
+
             abs_path = os.path.join(editor._vault_path, file_path)
             with open(abs_path, encoding="utf-8") as f:
                 updated_content = f.read()
@@ -991,12 +1036,14 @@ async def _update_note_section_mcp(
         except Exception:
             pass
 
-        return _success_response({
-            "document_id": document_id,
-            "file_path": file_path,
-            "target_heading": target_heading,
-            "section_update": result,
-        })
+        return _success_response(
+            {
+                "document_id": document_id,
+                "file_path": file_path,
+                "target_heading": target_heading,
+                "section_update": result,
+            }
+        )
     except Exception as exc:
         return _error_response("update_note_section", str(exc))
 
@@ -1014,11 +1061,13 @@ async def _append_to_note_mcp(
         note_service = await get_note_service()
         note_data = await note_service.get(document_id)
         if not note_data:
-            return _success_response({
-                "found": False,
-                "document_id": document_id,
-                "note": None,
-            })
+            return _success_response(
+                {
+                    "found": False,
+                    "document_id": document_id,
+                    "note": None,
+                }
+            )
         file_path = note_data["file_path"]
 
         editor = await get_note_editor()
@@ -1031,6 +1080,7 @@ async def _append_to_note_mcp(
         # Re-read the updated file content and trigger re-indexing
         try:
             import os
+
             abs_path = os.path.join(editor._vault_path, file_path)
             with open(abs_path, encoding="utf-8") as f:
                 updated_content = f.read()
@@ -1038,12 +1088,14 @@ async def _append_to_note_mcp(
         except Exception:
             pass
 
-        return _success_response({
-            "document_id": document_id,
-            "file_path": file_path,
-            "position": position,
-            "target_heading": target_heading,
-            "append_result": result,
-        })
+        return _success_response(
+            {
+                "document_id": document_id,
+                "file_path": file_path,
+                "position": position,
+                "target_heading": target_heading,
+                "append_result": result,
+            }
+        )
     except Exception as exc:
         return _error_response("append_to_note", str(exc))

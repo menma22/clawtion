@@ -1,4 +1,4 @@
-﻿"""clawtion index commands -- indexing and queue management."""
+"""clawtion index commands -- indexing and queue management."""
 
 from __future__ import annotations
 
@@ -220,10 +220,12 @@ async def queue_clear(clear_all: bool, failed: bool) -> None:
         else:
             count = await queue.clear_failed()  # Default: clear failed items
 
-        click.echo(click.style(
-            f"  {t('cli.queue.cleared_failed', count=count)}",
-            fg="green",
-        ))
+        click.echo(
+            click.style(
+                f"  {t('cli.queue.cleared_failed', count=count)}",
+                fg="green",
+            )
+        )
     finally:
         await services["db"].disconnect()
 

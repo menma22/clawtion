@@ -86,16 +86,11 @@ async def list_cmd() -> None:
             return
 
         click.echo()
-        click.echo(
-            click.style(t("cli.namespace.list_header", count=len(namespaces)), bold=True)
-        )
+        click.echo(click.style(t("cli.namespace.list_header", count=len(namespaces)), bold=True))
         click.echo()
 
         for ns in namespaces:
-            click.echo(
-                f"  {click.style(ns.name, bold=True)} "
-                f"({ns.chunk_count} chunks)"
-            )
+            click.echo(f"  {click.style(ns.name, bold=True)} ({ns.chunk_count} chunks)")
             click.echo(f"    {t('cli.namespace.namespace_id')}: {ns.namespace_id}")
             if ns.description:
                 click.echo(f"    {t('cli.namespace.description')}: {ns.description}")

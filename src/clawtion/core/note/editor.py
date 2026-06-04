@@ -81,9 +81,7 @@ class NoteEditor:
             candidates = self._find_all_heading_lines(lines, target_heading)
             msg = f"Heading '{target_heading}' not found in {file_path}."
             if candidates:
-                candidate_texts = ", ".join(
-                    f"'{lines[c].strip()}'" for c in candidates[:5]
-                )
+                candidate_texts = ", ".join(f"'{lines[c].strip()}'" for c in candidates[:5])
                 msg += f" Did you mean: {candidate_texts}?"
             raise ClawtionError(
                 code="HEADING_NOT_FOUND",
@@ -114,9 +112,7 @@ class NoteEditor:
 
         # Preserve heading line and surround with blank lines for clean formatting
         heading_line = lines[heading_index]
-        new_lines = (
-            [*lines[:heading_index], heading_line, "", new_content.strip(), "", *lines[section_end:]]
-        )
+        new_lines = [*lines[:heading_index], heading_line, "", new_content.strip(), "", *lines[section_end:]]
 
         self._write_lines(abs_path, new_lines)
 
@@ -199,9 +195,7 @@ class NoteEditor:
             )
 
         # Insert content at the computed position
-        new_lines = (
-            [*lines[:insertion_line], content.strip(), "", *lines[insertion_line:]]
-        )
+        new_lines = [*lines[:insertion_line], content.strip(), "", *lines[insertion_line:]]
 
         self._write_lines(abs_path, new_lines)
 

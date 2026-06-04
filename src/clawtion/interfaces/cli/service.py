@@ -43,7 +43,8 @@ def _check_db_connection() -> bool:
     try:
         result = subprocess.run(
             [
-                sys.executable, "-c",
+                sys.executable,
+                "-c",
                 "import asyncio; "
                 "from clawtion.core.db.connection import DatabaseManager; "
                 "import os; "
@@ -246,10 +247,7 @@ def _install_windows(mode: str) -> None:
         )
     elif mode == "scheduled":
         # Hourly task
-        cmd = (
-            f'SCHTASKS /Create /TN "{_SERVICE_NAME}" /TR "{clawtion_exe} {clawtion_args} index now" '
-            f"/SC HOURLY /F"
-        )
+        cmd = f'SCHTASKS /Create /TN "{_SERVICE_NAME}" /TR "{clawtion_exe} {clawtion_args} index now" /SC HOURLY /F'
     else:
         click.echo("  Manual mode: no OS service registered.")
         return
@@ -285,6 +283,7 @@ def _install_macos(mode: str) -> None:
         return
 
     import plistlib
+
     plist: dict[str, Any] = {
         "Label": label,
         "ProgramArguments": program_args,
@@ -366,7 +365,8 @@ def _uninstall_linux() -> None:
         if p.exists():
             subprocess.run(
                 ["systemctl", "--user", "disable", f],
-                capture_output=True, timeout=15,
+                capture_output=True,
+                timeout=15,
             )
             p.unlink()
     subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, timeout=15)

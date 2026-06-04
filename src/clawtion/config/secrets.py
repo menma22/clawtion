@@ -31,6 +31,7 @@ _KEYRING_SERVICE = "clawtion"
 # Encrypted file helpers
 # ---------------------------------------------------------------------------
 
+
 def _ensure_secrets_dir() -> None:
     _SECRETS_DIR.mkdir(parents=True, exist_ok=True)
 

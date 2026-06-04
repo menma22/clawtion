@@ -59,9 +59,7 @@ async def db_manager(db_url: str):
         "ADD COLUMN IF NOT EXISTS tsvector tsvector "
         "GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED"
     )
-    await manager.execute(
-        "CREATE INDEX IF NOT EXISTS idx_chunks_tsvector ON document_chunks USING GIN (tsvector)"
-    )
+    await manager.execute("CREATE INDEX IF NOT EXISTS idx_chunks_tsvector ON document_chunks USING GIN (tsvector)")
 
     yield manager
 

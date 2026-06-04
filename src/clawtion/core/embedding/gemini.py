@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 # -- Approximate token counter ----------------------------------------------
 
+
 def _estimate_tokens(text: str) -> int:
     """Return a rough token count for *text*.
 
@@ -56,8 +57,19 @@ def _is_retryable(exc: Exception) -> bool:
     msg = str(exc).lower()
     # google-genai SDK may raise google.api_core exceptions or plain
     # exceptions with similar wording.
-    for token in ("rate_limit", "resource_exhausted", "internal", "unavailable",
-                  "deadline_exceeded", "service_unavailable", "429", "500", "502", "503", "504"):
+    for token in (
+        "rate_limit",
+        "resource_exhausted",
+        "internal",
+        "unavailable",
+        "deadline_exceeded",
+        "service_unavailable",
+        "429",
+        "500",
+        "502",
+        "503",
+        "504",
+    ):
         if token in msg:
             return True
     return False
@@ -88,16 +100,22 @@ async def _retry_with_backoff(
             if not _is_retryable(exc):
                 raise
             if attempt < _MAX_RETRIES:
-                delay = min(_BASE_DELAY_S * (2 ** attempt) + (time.monotonic() % 1), _MAX_DELAY_S)
+                delay = min(_BASE_DELAY_S * (2**attempt) + (time.monotonic() % 1), _MAX_DELAY_S)
                 logger.warning(
                     "Embedding API %s retry %d/%d after %.1fs: %s",
-                    label, attempt + 1, _MAX_RETRIES, delay, exc,
+                    label,
+                    attempt + 1,
+                    _MAX_RETRIES,
+                    delay,
+                    exc,
                 )
                 await asyncio.sleep(delay)
             else:
                 logger.error(
                     "Embedding API %s exhausted after %d retries: %s",
-                    label, _MAX_RETRIES, exc,
+                    label,
+                    _MAX_RETRIES,
+                    exc,
                 )
     # Unreachable if loop always raises, but satisfy the type checker.
     raise EmbeddingRateLimitError(
@@ -189,11 +207,11 @@ class GeminiEmbeddingClient:
             return
         try:
             from google import genai
+
             self._client = genai.Client(api_key=self._api_key)
         except ImportError:
             raise EmbeddingError(
-                "google-genai package is not installed. "
-                "Run: pip install google-genai>=1.0.0",
+                "google-genai package is not installed. Run: pip install google-genai>=1.0.0",
             ) from None
 
     def _prepare_content(self, content: str, task_type: str, title: str | None = None) -> str:
@@ -238,12 +256,14 @@ class GeminiEmbeddingClient:
         try:
             for emb in response.embeddings:
                 values: list[float] = list(emb.values)
-                results.append(EmbeddingResult(
-                    embedding=values,
-                    model=model,
-                    dimensions=len(values),
-                    token_count=0,  # The genai SDK does not expose token counts yet.
-                ))
+                results.append(
+                    EmbeddingResult(
+                        embedding=values,
+                        model=model,
+                        dimensions=len(values),
+                        token_count=0,  # The genai SDK does not expose token counts yet.
+                    )
+                )
         except (AttributeError, TypeError, IndexError) as exc:
             raise EmbeddingError(
                 f"Failed to parse embedding response: {exc}",
@@ -315,7 +335,10 @@ class GeminiEmbeddingClient:
         """
         results = await _retry_with_backoff(
             lambda: asyncio.to_thread(
-                self._do_embed, content, _TASK_TYPE_DOCUMENT, title,
+                self._do_embed,
+                content,
+                _TASK_TYPE_DOCUMENT,
+                title,
             ),
             label="embed_document",
         )
@@ -336,7 +359,9 @@ class GeminiEmbeddingClient:
         """
         results = await _retry_with_backoff(
             lambda: asyncio.to_thread(
-                self._do_embed, query, _TASK_TYPE_QUERY,
+                self._do_embed,
+                query,
+                _TASK_TYPE_QUERY,
             ),
             label="embed_query",
         )
@@ -363,14 +388,15 @@ class GeminiEmbeddingClient:
 
         results = await _retry_with_backoff(
             lambda: asyncio.to_thread(
-                self._do_embed, contents, _TASK_TYPE_DOCUMENT,
+                self._do_embed,
+                contents,
+                _TASK_TYPE_DOCUMENT,
             ),
             label="embed_batch",
         )
 
         if len(results) != len(contents):
             raise EmbeddingError(
-                f"Batch embedding returned {len(results)} results for "
-                f"{len(contents)} inputs.",
+                f"Batch embedding returned {len(results)} results for {len(contents)} inputs.",
             )
         return results

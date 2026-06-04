@@ -308,12 +308,14 @@ class GitLoader:
             remote = self._get_remote_url(repo_dir)
             branch = self._get_current_branch_sync(repo_dir)
 
-            repos.append({
-                "name": entry,
-                "path": repo_dir,
-                "remote": remote,
-                "branch": branch,
-            })
+            repos.append(
+                {
+                    "name": entry,
+                    "path": repo_dir,
+                    "remote": remote,
+                    "branch": branch,
+                }
+            )
 
         return repos
 
@@ -332,9 +334,7 @@ class GitLoader:
             if os.path.isdir(candidate):
                 repo_path = candidate
 
-        if not os.path.isdir(repo_path) or not os.path.isdir(
-            os.path.join(repo_path, ".git")
-        ):
+        if not os.path.isdir(repo_path) or not os.path.isdir(os.path.join(repo_path, ".git")):
             raise ClawtionError(
                 code="REPO_NOT_FOUND",
                 message=f"Repository not found: {repo_name_or_path}",
@@ -350,9 +350,7 @@ class GitLoader:
         # Delete each file from the index (fire-and-forget with gather)
         import asyncio
 
-        tasks = [
-            self._indexing_service.delete_file(fp) for fp in file_paths
-        ]
+        tasks = [self._indexing_service.delete_file(fp) for fp in file_paths]
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             for i, r in enumerate(results):

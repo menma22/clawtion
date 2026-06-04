@@ -25,9 +25,7 @@ async def _get_services() -> dict[str, Any]:
         "CLAWTION_DB_URL",
         "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion",
     )
-    vault_path = os.path.expandvars(
-        os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault"))
-    )
+    vault_path = os.path.expandvars(os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault")))
     from clawtion.config.secrets import get_secret
 
     api_key = get_secret("gemini_api_key") or ""
@@ -191,9 +189,7 @@ async def git_update(
                         )
                     )
                 except Exception as e:
-                    click.echo(
-                        click.style(f"      {t('cli.general.error', message=str(e))}", fg="red")
-                    )
+                    click.echo(click.style(f"      {t('cli.general.error', message=str(e))}", fg="red"))
         elif repo_path:
             click.echo(f"  {t('cli.git.updating', name=repo_path)}")
             result = await git_loader.update_indexed_repo(repo_path, branch=branch)

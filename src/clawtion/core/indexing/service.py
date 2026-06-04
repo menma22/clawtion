@@ -41,12 +41,44 @@ logger = get_logger(__name__)
 
 # サポートするファイル拡張子
 _SUPPORTED_EXTENSIONS: set[str] = {
-    ".md", ".txt", ".rst", ".html", ".htm",
-    ".json", ".yaml", ".yml", ".toml", ".csv", ".xml",
-    ".py", ".js", ".ts", ".java", ".cpp", ".c", ".h",
-    ".rs", ".go", ".rb", ".php", ".swift", ".kt", ".scala",
-    ".sh", ".bash", ".zsh", ".ps1", ".bat", ".cmd",
-    ".sql", ".r", ".tex", ".org", ".adoc", ".asciidoc", ".log",
+    ".md",
+    ".txt",
+    ".rst",
+    ".html",
+    ".htm",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".csv",
+    ".xml",
+    ".py",
+    ".js",
+    ".ts",
+    ".java",
+    ".cpp",
+    ".c",
+    ".h",
+    ".rs",
+    ".go",
+    ".rb",
+    ".php",
+    ".swift",
+    ".kt",
+    ".scala",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".ps1",
+    ".bat",
+    ".cmd",
+    ".sql",
+    ".r",
+    ".tex",
+    ".org",
+    ".adoc",
+    ".asciidoc",
+    ".log",
 }
 
 
@@ -193,7 +225,10 @@ class IndexingService:
         # チャンク分割
         try:
             chunks = chunk_file(
-                file_path, content, folder_path=folder_path, config=self._config,
+                file_path,
+                content,
+                folder_path=folder_path,
+                config=self._config,
             )
         except Exception as e:
             logger.error("Chunking failed", file_path=rel_path, error=str(e))
@@ -357,9 +392,7 @@ class IndexingService:
             except Exception as e:
                 stats["failed"] += 1
                 stats["errors"].append(f"{row['file_path']}: {e}")
-                logger.error(
-                    "Failed to reindex", file=row["file_path"], error=str(e)
-                )
+                logger.error("Failed to reindex", file=row["file_path"], error=str(e))
 
         logger.info(
             "Reindex all completed",
@@ -486,29 +519,32 @@ class IndexingService:
                     await self.delete_file(abs_path)
                     await self._queue.update_status(queue_id, "completed")
                 else:
-                    await self._queue.update_status(
-                        queue_id, "failed", error=f"Unknown operation: {operation}"
-                    )
+                    await self._queue.update_status(queue_id, "failed", error=f"Unknown operation: {operation}")
 
                 stats["completed"] += 1
 
             except DocumentNotFoundError as e:
                 await self._queue.update_status(
-                    queue_id, "completed",
+                    queue_id,
+                    "completed",
                     error=f"File not found, skipping: {e}",
                 )
                 stats["completed"] += 1
 
             except Exception as e:
                 await self._queue.update_status(
-                    queue_id, "failed", error=str(e),
+                    queue_id,
+                    "failed",
+                    error=str(e),
                 )
                 stats["failed"] += 1
-                stats["errors"].append({
-                    "queue_id": queue_id,
-                    "file_path": file_path,
-                    "error": str(e),
-                })
+                stats["errors"].append(
+                    {
+                        "queue_id": queue_id,
+                        "file_path": file_path,
+                        "error": str(e),
+                    }
+                )
                 logger.error(
                     "Queue processing failed",
                     queue_id=queue_id,
@@ -649,9 +685,7 @@ class IndexingService:
         abs_path = os.path.join(self._vault_path, file_path)
 
         if not os.path.isfile(abs_path):
-            await self._queue.update_status(
-                queue_id, "failed", error="File no longer exists"
-            )
+            await self._queue.update_status(queue_id, "failed", error="File no longer exists")
             return {
                 "status": "failed",
                 "chunks_processed": 0,
@@ -759,9 +793,7 @@ class IndexingService:
             },
         )
 
-    async def _process_chunks(
-        self, document_id: str, chunks: list[Chunk]
-    ) -> list[str]:
+    async def _process_chunks(self, document_id: str, chunks: list[Chunk]) -> list[str]:
         """チャンクリストを処理する。
 
         1. 既存チャンクのハッシュと照合して重複排除
@@ -784,9 +816,7 @@ class IndexingService:
 
         if chunk_hashes:
             # IN 句用パラメータ
-            params: dict[str, Any] = {
-                f"h_{i}": h for i, h in enumerate(chunk_hashes)
-            }
+            params: dict[str, Any] = {f"h_{i}": h for i, h in enumerate(chunk_hashes)}
             in_clause = ", ".join(f":h_{i}" for i in range(len(chunk_hashes)))
 
             try:
@@ -867,10 +897,13 @@ class IndexingService:
             embedding_value = f"[{', '.join(str(x) for x in embedding)}]"
 
         # メタデータ
-        metadata = json.dumps({
-            "reused_embedding": is_reuse,
-            "level": chunk.level,
-        }, ensure_ascii=False)
+        metadata = json.dumps(
+            {
+                "reused_embedding": is_reuse,
+                "level": chunk.level,
+            },
+            ensure_ascii=False,
+        )
 
         try:
             await self._db.execute(
@@ -925,9 +958,7 @@ class IndexingService:
             )
             raise
 
-    async def _generate_embeddings(
-        self, contents: list[str]
-    ) -> list[list[float] | None]:
+    async def _generate_embeddings(self, contents: list[str]) -> list[list[float] | None]:
         """テキストリストの Embedding を一括生成する。"""
         if not contents:
             return []
@@ -965,9 +996,7 @@ class IndexingService:
                     individual_results.append(None)
             return individual_results
 
-    def _extract_content(
-        self, file_path: str, snapshot: FileSnapshot
-    ) -> str:
+    def _extract_content(self, file_path: str, snapshot: FileSnapshot) -> str:
         """ファイルからテキストコンテンツを抽出する。
 
         適切な FileProcessor を使用してコンテンツを抽出する。

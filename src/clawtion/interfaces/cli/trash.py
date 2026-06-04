@@ -1,4 +1,4 @@
-﻿"""clawtion trash commands -- list, restore, and empty the trash."""
+"""clawtion trash commands -- list, restore, and empty the trash."""
 
 from __future__ import annotations
 

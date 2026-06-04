@@ -131,24 +131,44 @@ class TestMergeShortAdjacent:
     def test_no_merge_needed(self) -> None:
         # Chunks with token_count above target_min should NOT be merged
         c1 = Chunk(
-            level="coarse", content="A" * 600, content_with_context="",
-            content_hash="h1", chunk_index=0, chunk_total=2, token_count=300,
+            level="coarse",
+            content="A" * 600,
+            content_with_context="",
+            content_hash="h1",
+            chunk_index=0,
+            chunk_total=2,
+            token_count=300,
         )
         c2 = Chunk(
-            level="coarse", content="B" * 600, content_with_context="",
-            content_hash="h2", chunk_index=1, chunk_total=2, token_count=300,
+            level="coarse",
+            content="B" * 600,
+            content_with_context="",
+            content_hash="h2",
+            chunk_index=1,
+            chunk_total=2,
+            token_count=300,
         )
         result = merge_short_adjacent([c1, c2], target_min=200)
         assert len(result) == 2
 
     def test_merge_short_chunks(self) -> None:
         c1 = Chunk(
-            level="coarse", content="Short.", content_with_context="",
-            content_hash="h1", chunk_index=0, chunk_total=2, token_count=2,
+            level="coarse",
+            content="Short.",
+            content_with_context="",
+            content_hash="h1",
+            chunk_index=0,
+            chunk_total=2,
+            token_count=2,
         )
         c2 = Chunk(
-            level="coarse", content="Also short.", content_with_context="",
-            content_hash="h2", chunk_index=1, chunk_total=2, token_count=2,
+            level="coarse",
+            content="Also short.",
+            content_with_context="",
+            content_hash="h2",
+            chunk_index=1,
+            chunk_total=2,
+            token_count=2,
         )
         result = merge_short_adjacent([c1, c2], target_min=200)
         assert len(result) == 1
@@ -159,8 +179,13 @@ class TestMergeShortAdjacent:
 
     def test_single_chunk(self) -> None:
         c1 = Chunk(
-            level="coarse", content="A", content_with_context="",
-            content_hash="h1", chunk_index=0, chunk_total=1, token_count=1,
+            level="coarse",
+            content="A",
+            content_with_context="",
+            content_hash="h1",
+            chunk_index=0,
+            chunk_total=1,
+            token_count=1,
         )
         result = merge_short_adjacent([c1], target_min=200)
         assert len(result) == 1

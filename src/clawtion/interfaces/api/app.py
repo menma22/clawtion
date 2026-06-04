@@ -83,6 +83,7 @@ def _http_status_for(error_code: str) -> int:
 # .env loader
 # ---------------------------------------------------------------------------
 
+
 def _load_dotenv() -> None:
     """Load .env file from project root or current directory into os.environ."""
     from pathlib import Path

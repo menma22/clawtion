@@ -50,7 +50,10 @@ class Document(Base):
         default=uuid.uuid4,
     )
     file_path: Mapped[str] = mapped_column(
-        Text, unique=True, nullable=False, index=True,
+        Text,
+        unique=True,
+        nullable=False,
+        index=True,
     )
     folder_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -58,38 +61,62 @@ class Document(Base):
     file_size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     tags: Mapped[list[Any]] = mapped_column(
-        JSON, default=list, nullable=False,
+        JSON,
+        default=list,
+        nullable=False,
         server_default=text("'[]'::json"),
     )
     wikilinks: Mapped[list[Any]] = mapped_column(
-        JSON, default=list, nullable=False,
+        JSON,
+        default=list,
+        nullable=False,
         server_default=text("'[]'::json"),
     )
     # Database column name is "metadata"; Python attribute avoids shadowing Base.metadata.
     doc_metadata: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSON, default=dict, nullable=False,
+        "metadata",
+        JSON,
+        default=dict,
+        nullable=False,
         server_default=text("'{}'::json"),
     )
     total_chunks: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, server_default="0",
+        Integer,
+        default=0,
+        nullable=False,
+        server_default="0",
     )
     has_file_level: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, server_default=text("false"),
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default=text("false"),
     )
     has_coarse_level: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, server_default=text("false"),
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default=text("false"),
     )
     has_fine_level: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, server_default=text("false"),
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default=text("false"),
     )
     last_indexed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     is_deleted: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, server_default=text("false"),
+        Boolean,
+        default=False,
+        nullable=False,
+        server_default=text("false"),
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -137,10 +164,14 @@ class Namespace(Base):
         default=uuid.uuid4,
     )
     name: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False,
+        String(100),
+        unique=True,
+        nullable=False,
     )
     description: Mapped[str] = mapped_column(
-        Text, default="", nullable=False,
+        Text,
+        default="",
+        nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -163,9 +194,7 @@ class Namespace(Base):
             "name": self.name,
             "description": self.description,
             "created_at": (
-                self.created_at.isoformat()
-                if hasattr(self.created_at, "isoformat")
-                else str(self.created_at)
+                self.created_at.isoformat() if hasattr(self.created_at, "isoformat") else str(self.created_at)
             ),
         }
 
@@ -192,7 +221,9 @@ class DocumentChunk(Base):
         index=True,
     )
     chunk_level: Mapped[str] = mapped_column(
-        String(10), nullable=False, index=True,
+        String(10),
+        nullable=False,
+        index=True,
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_total: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -217,13 +248,17 @@ class DocumentChunk(Base):
     embedding_model: Mapped[str | None] = mapped_column(String(50), nullable=True)
     embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
     embedded_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     token_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     char_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Database column name is "metadata"; Python attribute avoids shadowing Base.metadata.
     doc_metadata: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSON, default=dict, nullable=False,
+        "metadata",
+        JSON,
+        default=dict,
+        nullable=False,
         server_default=text("'{}'::json"),
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -234,10 +269,12 @@ class DocumentChunk(Base):
 
     # -- Relationships -------------------------------------------------------
     document: Mapped[Document] = relationship(
-        "Document", back_populates="chunks",
+        "Document",
+        back_populates="chunks",
     )
     namespace: Mapped[Namespace | None] = relationship(
-        "Namespace", back_populates="chunks",
+        "Namespace",
+        back_populates="chunks",
     )
     parent_chunk: Mapped[DocumentChunk | None] = relationship(
         "DocumentChunk",
@@ -281,26 +318,42 @@ class IndexingQueue(Base):
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
     operation: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(
-        String(20), default="pending", nullable=False,
-        server_default="pending", index=True,
+        String(20),
+        default="pending",
+        nullable=False,
+        server_default="pending",
+        index=True,
     )
     progress: Mapped[dict[str, Any]] = mapped_column(
-        JSON, default=dict, nullable=False,
+        JSON,
+        default=dict,
+        nullable=False,
         server_default=text("'{}'::json"),
     )
     priority: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False,
-        server_default="0", index=True,
+        Integer,
+        default=0,
+        nullable=False,
+        server_default="0",
+        index=True,
     )
     retry_count: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, server_default="0",
+        Integer,
+        default=0,
+        nullable=False,
+        server_default="0",
     )
     max_retries: Mapped[int] = mapped_column(
-        Integer, default=3, nullable=False, server_default="3",
+        Integer,
+        default=3,
+        nullable=False,
+        server_default="3",
     )
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_history: Mapped[list[Any]] = mapped_column(
-        JSON, default=list, nullable=False,
+        JSON,
+        default=list,
+        nullable=False,
         server_default=text("'[]'::json"),
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -309,22 +362,22 @@ class IndexingQueue(Base):
         nullable=False,
     )
     started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
     completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     # -- Relationships -------------------------------------------------------
     document: Mapped[Document] = relationship(
-        "Document", back_populates="queue_items",
+        "Document",
+        back_populates="queue_items",
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<IndexingQueue id={self.queue_id} doc={self.document_id} "
-            f"op={self.operation!r} status={self.status!r}>"
-        )
+        return f"<IndexingQueue id={self.queue_id} doc={self.document_id} op={self.operation!r} status={self.status!r}>"
 
 
 class Trash(Base):
@@ -342,12 +395,16 @@ class Trash(Base):
         default=uuid.uuid4,
     )
     original_document_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, index=True,
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
     )
     original_file_path: Mapped[str] = mapped_column(Text, nullable=False)
     original_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     original_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSON, default=dict, nullable=False,
+        JSON,
+        default=dict,
+        nullable=False,
         server_default=text("'{}'::json"),
     )
     deleted_at: Mapped[datetime] = mapped_column(
@@ -356,7 +413,8 @@ class Trash(Base):
         nullable=False,
     )
     auto_purge_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True,
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     def __repr__(self) -> str:
@@ -373,7 +431,8 @@ class VaultSettings(Base):
     __tablename__ = "vault_settings"
 
     key: Mapped[str] = mapped_column(
-        String(100), primary_key=True,
+        String(100),
+        primary_key=True,
     )
     value: Mapped[Any] = mapped_column(JSON, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -413,9 +472,7 @@ class Entity(Base):
     )
 
     # -- Constraints -------------------------------------------------------
-    __table_args__ = (
-        UniqueConstraint("name", "entity_type", name="uq_entity_name_type"),
-    )
+    __table_args__ = (UniqueConstraint("name", "entity_type", name="uq_entity_name_type"),)
 
     # -- Relationships -----------------------------------------------------
     source_relations: Mapped[list[Relation]] = relationship(
@@ -443,9 +500,7 @@ class Entity(Base):
             "entity_type": self.entity_type,
             "description": self.description,
             "created_at": (
-                self.created_at.isoformat()
-                if hasattr(self.created_at, "isoformat")
-                else str(self.created_at)
+                self.created_at.isoformat() if hasattr(self.created_at, "isoformat") else str(self.created_at)
             ),
         }
 
@@ -479,7 +534,10 @@ class Relation(Base):
     )
     relation_type: Mapped[str] = mapped_column(String(100), nullable=False)
     weight: Mapped[float] = mapped_column(
-        Float, default=1.0, nullable=False, server_default="1.0",
+        Float,
+        default=1.0,
+        nullable=False,
+        server_default="1.0",
     )
     source_chunk_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -521,8 +579,6 @@ class Relation(Base):
             "weight": self.weight,
             "source_chunk_id": str(self.source_chunk_id) if self.source_chunk_id else None,
             "created_at": (
-                self.created_at.isoformat()
-                if hasattr(self.created_at, "isoformat")
-                else str(self.created_at)
+                self.created_at.isoformat() if hasattr(self.created_at, "isoformat") else str(self.created_at)
             ),
         }

@@ -262,22 +262,14 @@ class SemanticSearch:
         # suggestions_for_claude を生成
         suggestions: list[str] = []
         if count == 0:
-            suggestions.append(
-                "No results. Try broadening query or check folder filter."
-            )
+            suggestions.append("No results. Try broadening query or check folder filter.")
         elif avg_score < 0.5:
-            suggestions.append(
-                "Low semantic match. Try keyword_search for exact term matching or broaden query."
-            )
+            suggestions.append("Low semantic match. Try keyword_search for exact term matching or broaden query.")
         elif avg_score >= 0.7:
-            suggestions.append(
-                f"Score range is healthy (>{avg_score:.2f}), results likely relevant."
-            )
+            suggestions.append(f"Score range is healthy (>{avg_score:.2f}), results likely relevant.")
 
         if count > 0 and score_range[1] - score_range[0] > 0.3:
-            suggestions.append(
-                "Results vary in relevance. Consider top 2-3 only."
-            )
+            suggestions.append("Results vary in relevance. Consider top 2-3 only.")
         elif count > 0 and score_range[1] - score_range[0] < 0.1 and avg_score > 0.7:
             suggestions.append("Strong consistent matches across all results.")
 
@@ -288,14 +280,10 @@ class SemanticSearch:
         doc_counts = Counter(doc_ids)
         multi_hit_docs = {doc_id: cnt for doc_id, cnt in doc_counts.items() if cnt >= 3}
         if multi_hit_docs:
-            suggestions.append(
-                "Multiple hits from same file detected. Consider get_file_chunks for full context."
-            )
+            suggestions.append("Multiple hits from same file detected. Consider get_file_chunks for full context.")
 
         # 汎用サジェスチョン
-        suggestions.append(
-            "If too generic or results lack precision, try hybrid_search combining semantic + keyword."
-        )
+        suggestions.append("If too generic or results lack precision, try hybrid_search combining semantic + keyword.")
 
         return {
             "tool": "semantic_search",

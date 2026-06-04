@@ -14,10 +14,26 @@ DetectorFactory.seed = 0
 FALLBACK_LANGUAGE = "ja"
 
 # Languages that pysbd supports natively
-_SUPPORTED_LANGUAGES = frozenset({
-    "ja", "en", "zh", "ko", "fr", "de", "es", "pt", "it", "nl",
-    "ru", "ar", "hi", "th", "vi", "tr",
-})
+_SUPPORTED_LANGUAGES = frozenset(
+    {
+        "ja",
+        "en",
+        "zh",
+        "ko",
+        "fr",
+        "de",
+        "es",
+        "pt",
+        "it",
+        "nl",
+        "ru",
+        "ar",
+        "hi",
+        "th",
+        "vi",
+        "tr",
+    }
+)
 
 
 def detect_language(text: str, fallback: str | None = None) -> str:
@@ -65,7 +81,5 @@ def is_cjk(text: str) -> bool:
     if not text:
         return False
 
-    cjk_count = sum(
-        1 for ch in text if "CJK" in unicodedata.name(ch, "")
-    )
+    cjk_count = sum(1 for ch in text if "CJK" in unicodedata.name(ch, ""))
     return cjk_count / max(len(text), 1) > 0.5

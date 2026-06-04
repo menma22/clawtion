@@ -283,13 +283,15 @@ async def metrics(
 
     # Count total documents directly (list_notes with limit=0 returns nothing)
     doc_count = await db.execute(
-        "SELECT COUNT(*) as cnt FROM documents WHERE is_deleted = false", {},
+        "SELECT COUNT(*) as cnt FROM documents WHERE is_deleted = false",
+        {},
     )
     total_docs = doc_count[0]["cnt"] if doc_count else 0
 
     # Count total chunks
     chunk_count = await db.execute(
-        "SELECT COUNT(*) as cnt FROM document_chunks", {},
+        "SELECT COUNT(*) as cnt FROM document_chunks",
+        {},
     )
     total_chunks = chunk_count[0]["cnt"] if chunk_count else 0
 

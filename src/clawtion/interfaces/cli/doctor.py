@@ -54,7 +54,8 @@ async def _check_docker() -> DiagnosticResult:
     result = DiagnosticResult(t("cli.doctor.docker", status=""))
     try:
         proc = await asyncio.create_subprocess_exec(
-            "docker", "info",
+            "docker",
+            "info",
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
@@ -73,6 +74,7 @@ async def _check_db_connection() -> DiagnosticResult:
     result = DiagnosticResult(t("cli.doctor.db_connection", status=""))
     try:
         from clawtion.core.db.connection import DatabaseManager
+
         db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")
         db = DatabaseManager(db_url)
         await db.connect()
@@ -88,6 +90,7 @@ async def _check_db_schema() -> DiagnosticResult:
     result = DiagnosticResult(t("cli.doctor.db_schema", version="", status=""))
     try:
         from clawtion.core.db.migrations import check_migration_status
+
         db_url = os.environ.get("CLAWTION_DB_URL", "postgresql+asyncpg://clawtion:clawtion@localhost:5432/clawtion")
         status_str = await check_migration_status(db_url)
         if status_str == "up-to-date":
@@ -132,6 +135,7 @@ async def _check_claude_config() -> DiagnosticResult:
         issues.append("~/.claude.json not found")
     elif mcp_path.exists():
         import json
+
         try:
             cfg = json.loads(mcp_path.read_text(encoding="utf-8"))
             if "clawtion" not in cfg.get("mcpServers", {}):
@@ -180,6 +184,7 @@ async def _check_vault() -> DiagnosticResult:
     result.ok(f"{file_count} files")
     return result
 
+
 async def _check_disk_space() -> DiagnosticResult:
     """Check available disk space."""
     cfg = get_config()
@@ -188,11 +193,11 @@ async def _check_disk_space() -> DiagnosticResult:
 
     if vault_path:
         usage = shutil.disk_usage(os.path.dirname(vault_path) if vault_path else "/")
-        free_gb = usage.free / (1024 ** 3)
+        free_gb = usage.free / (1024**3)
         result.ok(f"{free_gb:.1f} GB free")
     else:
         usage = shutil.disk_usage("/")
-        free_gb = usage.free / (1024 ** 3)
+        free_gb = usage.free / (1024**3)
         result.ok(f"{free_gb:.1f} GB free")
 
     return result
@@ -238,12 +243,8 @@ async def _check_queue() -> DiagnosticResult:
 async def doctor() -> None:
     """Run comprehensive diagnostics on the clawtion installation."""
     click.echo()
-    click.echo(
-        click.style(f"  {t('cli.doctor.header')}", bold=True, fg="cyan")
-    )
-    click.echo(
-        click.style(f"  {t('cli.doctor.separator')}", fg="cyan")
-    )
+    click.echo(click.style(f"  {t('cli.doctor.header')}", bold=True, fg="cyan"))
+    click.echo(click.style(f"  {t('cli.doctor.separator')}", fg="cyan"))
     click.echo()
 
     checks = [

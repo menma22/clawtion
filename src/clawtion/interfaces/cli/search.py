@@ -86,7 +86,14 @@ def search() -> None:
 @click.option("--semantic", "mode", flag_value="semantic", help="Use semantic vector search")
 @click.option("--keyword", "mode", flag_value="keyword", help="Use keyword full-text search")
 @click.option("--hybrid", "mode", flag_value="hybrid", default=True, help="Use hybrid search (default)")
-@click.option("--granularity", "granularity", default="all", show_default=True, type=click.Choice(["file", "coarse", "fine", "all"]), help="Chunk granularity level")
+@click.option(
+    "--granularity",
+    "granularity",
+    default="all",
+    show_default=True,
+    type=click.Choice(["file", "coarse", "fine", "all"]),
+    help="Chunk granularity level",
+)
 @click.option("--top-k", "top_k", default=10, type=int, show_default=True, help="Number of results")
 @click.option("--folder", default=None, help="Filter by folder path")
 @click.option("--tags", default=None, help="Filter by tags (comma-separated)")

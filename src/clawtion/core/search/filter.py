@@ -86,18 +86,12 @@ class MetadataFilter:
         self._namespace_id = namespace_id
         return self
 
-    def _build_namespace_condition(
-        self, params: dict[str, Any]
-    ) -> str:
+    def _build_namespace_condition(self, params: dict[str, Any]) -> str:
         """名前空間フィルタの SQL 条件を構築する。"""
         if self._namespace_id is None:
             return ""
 
-        ids: list[str] = (
-            [self._namespace_id]
-            if isinstance(self._namespace_id, str)
-            else list(self._namespace_id)
-        )
+        ids: list[str] = [self._namespace_id] if isinstance(self._namespace_id, str) else list(self._namespace_id)
 
         if len(ids) == 0:
             return ""
@@ -175,20 +169,14 @@ class MetadataFilter:
         import json
 
         if self._folder is not None:
-            filter_parts.append(
-                json.dumps({"folder_path": self._folder}, ensure_ascii=False)
-            )
+            filter_parts.append(json.dumps({"folder_path": self._folder}, ensure_ascii=False))
 
         if self._tags is not None and len(self._tags) > 0:
-            filter_parts.append(
-                json.dumps({"tags": self._tags}, ensure_ascii=False)
-            )
+            filter_parts.append(json.dumps({"tags": self._tags}, ensure_ascii=False))
 
         if self._extension is not None:
             ext = self._extension if self._extension.startswith(".") else f".{self._extension}"
-            filter_parts.append(
-                json.dumps({"file_extension": ext}, ensure_ascii=False)
-            )
+            filter_parts.append(json.dumps({"file_extension": ext}, ensure_ascii=False))
 
         if not filter_parts:
             return "'{}'::jsonb"
@@ -204,7 +192,15 @@ class MetadataFilter:
         """フィルタ条件が空かどうかを返す。"""
         return all(
             x is None or x == {} or x == []
-            for x in [self._folder, self._tags, self._date_from, self._date_to, self._extension, self._custom, self._namespace_id]
+            for x in [
+                self._folder,
+                self._tags,
+                self._date_from,
+                self._date_to,
+                self._extension,
+                self._custom,
+                self._namespace_id,
+            ]
         )
 
     def to_dict(self) -> dict[str, Any]:

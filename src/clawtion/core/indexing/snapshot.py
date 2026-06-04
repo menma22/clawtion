@@ -59,9 +59,9 @@ def take_snapshot(file_path: str) -> FileSnapshot:
     except (OSError, PermissionError) as e:
         logger.error("Failed to read file for snapshot", file_path=file_path, error=str(e))
         raise ClawtionError(
-    code="FILE_READ_ERROR",
-    message=f"Failed to read file: {file_path}",
-) from e
+            code="FILE_READ_ERROR",
+            message=f"Failed to read file: {file_path}",
+        ) from e
 
     content_hash = compute_content_hash(content)
     taken_at = time.time()

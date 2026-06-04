@@ -132,9 +132,7 @@ class QueueManager:
             "max_retries": row["max_retries"],
         }
 
-    async def update_status(
-        self, queue_id: str, status: str, error: str | None = None
-    ) -> None:
+    async def update_status(self, queue_id: str, status: str, error: str | None = None) -> None:
         """キューアイテムのステータスを更新する。
 
         Args:
@@ -155,9 +153,7 @@ class QueueManager:
             completed_at_part = ", completed_at = :now"
 
         if error is not None:
-            error_history_entry = json.dumps([
-                {"timestamp": now, "error": error}
-            ])
+            error_history_entry = json.dumps([{"timestamp": now, "error": error}])
             query = f"""
                 UPDATE indexing_queue
                 SET status = :status,
@@ -220,10 +216,14 @@ class QueueManager:
                 "file_path": row["file_path"],
                 "operation": row["operation"],
                 "status": row["status"],
-                "progress": row["progress"] if isinstance(row["progress"], dict) else json.loads(row["progress"] or "{}"),
+                "progress": row["progress"]
+                if isinstance(row["progress"], dict)
+                else json.loads(row["progress"] or "{}"),
                 "retry_count": row["retry_count"],
                 "max_retries": row["max_retries"],
-                "created_at": row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else row["created_at"],
+                "created_at": row["created_at"].isoformat()
+                if hasattr(row["created_at"], "isoformat")
+                else row["created_at"],
             }
             for row in rows
         ]
@@ -250,10 +250,18 @@ class QueueManager:
                 "retry_count": row["retry_count"],
                 "max_retries": row["max_retries"],
                 "last_error": row["last_error"],
-                "error_history": json.loads(row["error_history"]) if isinstance(row.get("error_history"), str) else (row.get("error_history") or []),
-                "created_at": row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else row["created_at"],
-                "started_at": row["started_at"].isoformat() if row.get("started_at") and hasattr(row["started_at"], "isoformat") else row.get("started_at"),
-                "completed_at": row["completed_at"].isoformat() if row.get("completed_at") and hasattr(row["completed_at"], "isoformat") else row.get("completed_at"),
+                "error_history": json.loads(row["error_history"])
+                if isinstance(row.get("error_history"), str)
+                else (row.get("error_history") or []),
+                "created_at": row["created_at"].isoformat()
+                if hasattr(row["created_at"], "isoformat")
+                else row["created_at"],
+                "started_at": row["started_at"].isoformat()
+                if row.get("started_at") and hasattr(row["started_at"], "isoformat")
+                else row.get("started_at"),
+                "completed_at": row["completed_at"].isoformat()
+                if row.get("completed_at") and hasattr(row["completed_at"], "isoformat")
+                else row.get("completed_at"),
             }
             for row in rows
         ]

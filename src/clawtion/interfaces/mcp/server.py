@@ -93,9 +93,7 @@ async def get_note_service() -> Any:
     cfg = get_config_cached()
     db = await get_db()
     embedder = await get_embedder()
-    vault_path = os.path.expandvars(
-        os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault"))
-    )
+    vault_path = os.path.expandvars(os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault")))
 
     queue = QueueManager(db)
     indexing_service = IndexingService(
@@ -122,9 +120,7 @@ async def get_note_editor() -> Any:
     from clawtion.core.note.editor import NoteEditor
 
     cfg = get_config_cached()
-    vault_path = os.path.expandvars(
-        os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault"))
-    )
+    vault_path = os.path.expandvars(os.path.expanduser(cfg.get("vault", {}).get("path", "~/Documents/clawtion-vault")))
     return NoteEditor(vault_path=vault_path)
 
 
@@ -145,6 +141,7 @@ def create_mcp_server() -> Any:
 
     # Register all tools
     from clawtion.interfaces.mcp.tools import register_all_tools
+
     register_all_tools(server)
 
     return server

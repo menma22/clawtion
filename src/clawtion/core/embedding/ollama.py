@@ -194,8 +194,7 @@ class OllamaEmbeddingClient:
             )
         except ImportError:
             raise EmbeddingError(
-                "httpx package is not installed. "
-                "Run: pip install httpx>=0.27.0",
+                "httpx package is not installed. Run: pip install httpx>=0.27.0",
             ) from None
 
     async def _call_embeddings_api(self, prompt: str) -> dict[str, Any]:

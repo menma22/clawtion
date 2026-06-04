@@ -47,7 +47,7 @@ def _compute_delay(attempt: int, config: RetryConfig) -> float:
     """Compute the backoff delay for a given attempt number (0-based)."""
     import random
 
-    delay = config.initial_wait_seconds * (config.backoff_multiplier ** attempt)
+    delay = config.initial_wait_seconds * (config.backoff_multiplier**attempt)
     delay = min(delay, config.max_wait_seconds)
 
     if config.jitter:

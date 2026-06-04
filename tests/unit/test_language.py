@@ -1,6 +1,5 @@
 """Unit tests for language detection."""
 
-
 from clawtion.utils.language import detect_language, is_cjk
 
 

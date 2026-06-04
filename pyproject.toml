@@ -68,6 +68,9 @@ clawtion = "clawtion.interfaces.cli.main:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+clawtion = ["i18n/locales/*.json"]
+
 [tool.mypy]
 strict = true
 warn_return_any = true

@@ -1,7 +1,5 @@
 """Unit tests for retry mechanism."""
 
-
-
 from clawtion.utils.retry import RetryConfig
 
 

@@ -129,9 +129,7 @@ class HybridSearch:
 
         return {"results": detailed_results, "context": context}
 
-    async def _fetch_chunk_details(
-        self, chunk_ids: list[str]
-    ) -> list[dict[str, Any]]:
+    async def _fetch_chunk_details(self, chunk_ids: list[str]) -> list[dict[str, Any]]:
         """チャンクIDのリストから詳細情報を取得する。"""
         if not chunk_ids:
             return []
@@ -220,10 +218,7 @@ class HybridSearch:
         # スコア降順でソート
         sorted_items = sorted(score_map.items(), key=lambda x: x[1], reverse=True)
 
-        return [
-            {"chunk_id": cid, "rrf_score": score}
-            for cid, score in sorted_items
-        ]
+        return [{"chunk_id": cid, "rrf_score": score} for cid, score in sorted_items]
 
     def _build_context(
         self,
@@ -245,12 +240,10 @@ class HybridSearch:
         if count == 0:
             suggestions.append("No results. Try broadening query or removing filters.")
         elif avg_score < 0.3:
-            suggestions.append(
-                "Low overall relevance. Try adjusting semantic_weight or broadening query."
-            )
+            suggestions.append("Low overall relevance. Try adjusting semantic_weight or broadening query.")
         else:
             suggestions.append(
-                f"Hybrid search results balanced (semantic:keyword = {semantic_weight:.1f}:{1.0-semantic_weight:.1f})."
+                f"Hybrid search results balanced (semantic:keyword = {semantic_weight:.1f}:{1.0 - semantic_weight:.1f})."
             )
 
         if count > 0:
@@ -259,9 +252,7 @@ class HybridSearch:
             doc_ids = [r["document_id"] for r in results]
             multi_hit_docs = {doc_id: cnt for doc_id, cnt in Counter(doc_ids).items() if cnt >= 3}
             if multi_hit_docs:
-                suggestions.append(
-                    "Multiple hits from same file. Consider get_file_chunks for full context."
-                )
+                suggestions.append("Multiple hits from same file. Consider get_file_chunks for full context.")
 
         return {
             "tool": "hybrid_search",

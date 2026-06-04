@@ -64,22 +64,22 @@ class TrashService:
                     else json.loads(row["original_metadata"])
                 )
 
-            results.append({
-                "trash_id": row["trash_id"],
-                "original_document_id": row["original_document_id"],
-                "original_file_path": row["original_file_path"],
-                "original_metadata": metadata,
-                "deleted_at": (
-                    row["deleted_at"].isoformat()
-                    if hasattr(row["deleted_at"], "isoformat")
-                    else row["deleted_at"]
-                ),
-                "auto_purge_at": (
-                    row["auto_purge_at"].isoformat()
-                    if hasattr(row["auto_purge_at"], "isoformat")
-                    else row["auto_purge_at"]
-                ),
-            })
+            results.append(
+                {
+                    "trash_id": row["trash_id"],
+                    "original_document_id": row["original_document_id"],
+                    "original_file_path": row["original_file_path"],
+                    "original_metadata": metadata,
+                    "deleted_at": (
+                        row["deleted_at"].isoformat() if hasattr(row["deleted_at"], "isoformat") else row["deleted_at"]
+                    ),
+                    "auto_purge_at": (
+                        row["auto_purge_at"].isoformat()
+                        if hasattr(row["auto_purge_at"], "isoformat")
+                        else row["auto_purge_at"]
+                    ),
+                }
+            )
 
         return results
 

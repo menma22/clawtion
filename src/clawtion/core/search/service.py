@@ -156,9 +156,7 @@ class SearchService:
 
     # ---- チャンクナビゲーション ----
 
-    async def get_file_chunks(
-        self, document_id: str, level: str = "file"
-    ) -> list[dict[str, Any]]:
+    async def get_file_chunks(self, document_id: str, level: str = "file") -> list[dict[str, Any]]:
         """指定ドキュメントの全チャンクを順序通りに取得する。"""
         if level:
             query = """
@@ -192,9 +190,7 @@ class SearchService:
         rows = await self._db.execute(query, params)
         return [dict(row) for row in rows]
 
-    async def get_neighbor_chunks(
-        self, chunk_id: str, before: int = 1, after: int = 1
-    ) -> list[dict[str, Any]]:
+    async def get_neighbor_chunks(self, chunk_id: str, before: int = 1, after: int = 1) -> list[dict[str, Any]]:
         """指定チャンクの前後 N 個のチャンクを同一ファイル内から取得する。"""
         # まず対象チャンクの document_id と chunk_level, chunk_index を取得
         current = await self._db.execute_one(
@@ -344,14 +340,10 @@ class SearchService:
                     else row["last_indexed_at"]
                 ),
                 "created_at": (
-                    row["created_at"].isoformat()
-                    if hasattr(row["created_at"], "isoformat")
-                    else row["created_at"]
+                    row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else row["created_at"]
                 ),
                 "updated_at": (
-                    row["updated_at"].isoformat()
-                    if hasattr(row["updated_at"], "isoformat")
-                    else row["updated_at"]
+                    row["updated_at"].isoformat() if hasattr(row["updated_at"], "isoformat") else row["updated_at"]
                 ),
             }
             for row in rows
@@ -359,9 +351,7 @@ class SearchService:
 
     # ---- 内部ヘルパー ----
 
-    def _build_navigation(
-        self, chunk: dict[str, Any], all_chunks: list[dict[str, Any]]
-    ) -> NavigationInfo:
+    def _build_navigation(self, chunk: dict[str, Any], all_chunks: list[dict[str, Any]]) -> NavigationInfo:
         """チャンクのナビゲーション情報を構築する。"""
         chunk_id = chunk["chunk_id"]
         chunk_ids = [c["chunk_id"] for c in all_chunks]
@@ -383,9 +373,7 @@ class SearchService:
             all_chunks_in_file=chunk_ids,
         )
 
-    def _generate_suggestions(
-        self, results: list[dict[str, Any]], context: dict[str, Any]
-    ) -> list[str]:
+    def _generate_suggestions(self, results: list[dict[str, Any]], context: dict[str, Any]) -> list[str]:
         """検索結果に基づいて Claude Code 向けのサジェスチョンを生成する。"""
         suggestions: list[str] = []
         count = len(results)
@@ -398,13 +386,9 @@ class SearchService:
         avg_score = sum(scores) / count if count > 0 else 0.0
 
         if avg_score < 0.3:
-            suggestions.append(
-                "Low relevance scores. Consider keyword_search for exact matching."
-            )
+            suggestions.append("Low relevance scores. Consider keyword_search for exact matching.")
         elif avg_score >= 0.7:
-            suggestions.append(
-                f"Strong relevance (avg score {avg_score:.2f}). Results are likely reliable."
-            )
+            suggestions.append(f"Strong relevance (avg score {avg_score:.2f}). Results are likely reliable.")
 
         # 同一ファイルからの複数ヒット
         from collections import Counter
@@ -413,12 +397,8 @@ class SearchService:
         doc_counts = Counter(doc_ids)
         multi_hit = {doc_id: cnt for doc_id, cnt in doc_counts.items() if cnt >= 3}
         if multi_hit:
-            suggestions.append(
-                "Multiple chunks from the same file found. Use get_file_chunks for complete context."
-            )
-            suggestions.append(
-                f"Files with multiple hits: {', '.join(multi_hit.keys())}"
-            )
+            suggestions.append("Multiple chunks from the same file found. Use get_file_chunks for complete context.")
+            suggestions.append(f"Files with multiple hits: {', '.join(multi_hit.keys())}")
 
         return suggestions
 
@@ -438,9 +418,7 @@ class SearchService:
         merged["namespace_id"] = namespace
         return merged
 
-    def _dict_to_filter(
-        self, filter_dict: dict[str, Any] | None
-    ) -> MetadataFilter | None:
+    def _dict_to_filter(self, filter_dict: dict[str, Any] | None) -> MetadataFilter | None:
         """dict 形式のフィルタを MetadataFilter に変換する。"""
         if filter_dict is None:
             return None

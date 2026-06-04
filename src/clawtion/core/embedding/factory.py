@@ -76,8 +76,7 @@ def create_embedding_client(config: dict[str, Any]) -> EmbeddingClient:
         return _create_ollama(emb_cfg)
     else:
         raise EmbeddingError(
-            f"Unknown embedding provider: {provider!r}. "
-            f"Supported: {', '.join(sorted(_PROVIDER_REGISTRY))}",
+            f"Unknown embedding provider: {provider!r}. Supported: {', '.join(sorted(_PROVIDER_REGISTRY))}",
         )
 
 
@@ -91,8 +90,7 @@ def _create_gemini(emb_cfg: dict[str, Any]) -> EmbeddingClient:
     api_key = get_secret("gemini_api_key")
     if not api_key:
         raise EmbeddingError(
-            "Gemini API key is not configured. "
-            "Run: clawtion config set-key gemini",
+            "Gemini API key is not configured. Run: clawtion config set-key gemini",
         )
 
     return GeminiEmbeddingClient(
@@ -113,8 +111,7 @@ def _create_openai(emb_cfg: dict[str, Any]) -> EmbeddingClient:
     api_key = get_secret("openai_api_key")
     if not api_key:
         raise EmbeddingError(
-            "OpenAI API key is not configured. "
-            "Run: clawtion config set-key openai",
+            "OpenAI API key is not configured. Run: clawtion config set-key openai",
         )
 
     openai_cfg: dict[str, Any] = emb_cfg.get("openai", {})

@@ -195,14 +195,10 @@ class NoteService:
                 else row["last_indexed_at"]
             ),
             "created_at": (
-                row["created_at"].isoformat()
-                if hasattr(row["created_at"], "isoformat")
-                else row["created_at"]
+                row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else row["created_at"]
             ),
             "updated_at": (
-                row["updated_at"].isoformat()
-                if hasattr(row["updated_at"], "isoformat")
-                else row["updated_at"]
+                row["updated_at"].isoformat() if hasattr(row["updated_at"], "isoformat") else row["updated_at"]
             ),
         }
 
@@ -241,7 +237,9 @@ class NoteService:
         if title is not None or folder is not None:
             sanitized_title = self._sanitize_filename(new_title)
             new_folder_part = f"{new_folder}/" if new_folder else ""
-            new_file_path = os.path.join(new_folder_part, f"{sanitized_title}.md") if new_folder_part else f"{sanitized_title}.md"
+            new_file_path = (
+                os.path.join(new_folder_part, f"{sanitized_title}.md") if new_folder_part else f"{sanitized_title}.md"
+            )
 
             # ファイルを移動
             new_abs_path = os.path.join(self._vault_path, new_file_path)
@@ -316,9 +314,7 @@ class NoteService:
             "content_hash": content_hash,
         }
 
-    async def delete(
-        self, document_id: str, permanent: bool = False
-    ) -> dict[str, Any]:
+    async def delete(self, document_id: str, permanent: bool = False) -> dict[str, Any]:
         """ノートを削除する。
 
         Args:
@@ -459,14 +455,10 @@ class NoteService:
                     else row["last_indexed_at"]
                 ),
                 "created_at": (
-                    row["created_at"].isoformat()
-                    if hasattr(row["created_at"], "isoformat")
-                    else row["created_at"]
+                    row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else row["created_at"]
                 ),
                 "updated_at": (
-                    row["updated_at"].isoformat()
-                    if hasattr(row["updated_at"], "isoformat")
-                    else row["updated_at"]
+                    row["updated_at"].isoformat() if hasattr(row["updated_at"], "isoformat") else row["updated_at"]
                 ),
             }
             for row in rows
@@ -495,14 +487,10 @@ class NoteService:
             sanitized = "untitled"
         return sanitized
 
-    def _build_note_content(
-        self, content: str, tags: list[str] | None = None
-    ) -> str:
+    def _build_note_content(self, content: str, tags: list[str] | None = None) -> str:
         """ノートファイルの内容を構築する（frontmatter 付き）。"""
         if tags:
             tags_yaml = ", ".join(tags)
             frontmatter = f"---\ntags: [{tags_yaml}]\n---\n\n"
             return frontmatter + content
         return content
-
-

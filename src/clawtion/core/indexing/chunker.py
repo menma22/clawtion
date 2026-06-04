@@ -84,10 +84,12 @@ def split_by_markdown_headings(content: str) -> list[dict[str, str]]:
             # 現在のセクションを保存
             section_content = "\n".join(current_lines).strip()
             if section_content or current_heading_path is not None:
-                sections.append({
-                    "heading_path": current_heading_path,
-                    "content": section_content,
-                })
+                sections.append(
+                    {
+                        "heading_path": current_heading_path,
+                        "content": section_content,
+                    }
+                )
             current_lines = []
 
             level = len(heading_match.group(1))
@@ -106,10 +108,12 @@ def split_by_markdown_headings(content: str) -> list[dict[str, str]]:
 
     # 最後のセクション
     section_content = "\n".join(current_lines).strip()
-    sections.append({
-        "heading_path": current_heading_path,
-        "content": section_content,
-    })
+    sections.append(
+        {
+            "heading_path": current_heading_path,
+            "content": section_content,
+        }
+    )
 
     return sections
 
@@ -259,9 +263,7 @@ def chunk_file_level(content: str, max_tokens: int = 1500) -> list[Chunk]:
     ]
 
 
-def chunk_coarse_level(
-    content: str, target: int = 800, max_tokens: int = 1500
-) -> list[Chunk]:
+def chunk_coarse_level(content: str, target: int = 800, max_tokens: int = 1500) -> list[Chunk]:
     """Coarse粒度チャンキング。
 
     見出しベースで分割する。見出しセクションが上限トークンを超える場合は、
@@ -296,9 +298,7 @@ def chunk_coarse_level(
         else:
             # 上限超過: 段落で再分割
             paragraphs = split_by_paragraphs(section_content)
-            para_chunks = _merge_paragraphs_to_target(
-                paragraphs, heading_path, target, max_tokens
-            )
+            para_chunks = _merge_paragraphs_to_target(paragraphs, heading_path, target, max_tokens)
             raw_chunks.extend(para_chunks)
 
     # 短すぎる隣接チャンクを結合
@@ -541,9 +541,7 @@ def build_context(
 # ---- メインエントリポイント ----
 
 
-def _try_file_level(
-    content: str, max_tokens: int = 1500
-) -> list[dict[str, Any]]:
+def _try_file_level(content: str, max_tokens: int = 1500) -> list[dict[str, Any]]:
     """ファイルレベルを試行する。失敗時は空リスト。"""
     chunks = chunk_file_level(content, max_tokens=max_tokens)
     if not chunks:
@@ -560,9 +558,7 @@ def _try_file_level(
     ]
 
 
-def _try_coarse_level(
-    content: str, target: int = 800, max_tokens: int = 1500
-) -> list[dict[str, Any]]:
+def _try_coarse_level(content: str, target: int = 800, max_tokens: int = 1500) -> list[dict[str, Any]]:
     """Coarseレベルを試行する。"""
     chunks = chunk_coarse_level(content, target=target, max_tokens=max_tokens)
     return [
@@ -612,6 +608,7 @@ def chunk_file(
     if not cfg:
         try:
             from clawtion.config.loader import get_config
+
             cfg = get_config()
         except Exception:
             cfg = {}
@@ -680,11 +677,7 @@ def chunk_file(
         return result
 
     # ---- Phase 1 fallback: file → coarse ----
-    raw_data = (
-        _try_file_level(content)
-        if token_count <= 1500
-        else _try_coarse_level(content)
-    )
+    raw_data = _try_file_level(content) if token_count <= 1500 else _try_coarse_level(content)
 
     if not raw_data:
         return []

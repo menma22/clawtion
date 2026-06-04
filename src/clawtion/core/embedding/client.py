@@ -12,6 +12,7 @@ from typing import Any, Protocol, runtime_checkable
 
 # -- Data objects ------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class EmbeddingResult:
     """The result of a single embedding operation.
@@ -22,6 +23,7 @@ class EmbeddingResult:
         dimensions: Number of dimensions in the vector.
         token_count: Estimated number of tokens consumed.
     """
+
     embedding: list[float] = field(repr=False)
     model: str
     dimensions: int
@@ -37,12 +39,14 @@ class ExtractedContent:
         file_path: Absolute path to the source file.
         metadata: Arbitrary metadata dict (encoding, page count, …).
     """
+
     text: str
     file_path: str
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # -- Exceptions --------------------------------------------------------------
+
 
 class EmbeddingError(Exception):
     """Generic error raised when an embedding operation fails."""
@@ -61,6 +65,7 @@ class EmbeddingBatchError(EmbeddingError):
 
 
 # -- Protocols ---------------------------------------------------------------
+
 
 @runtime_checkable
 class EmbeddingClient(Protocol):

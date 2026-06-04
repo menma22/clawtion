@@ -27,11 +27,7 @@ def _ensure_config_dir() -> None:
 
 def _get_editor() -> str:
     """Get the user's preferred editor from environment."""
-    editor = (
-        os.environ.get("CLAWTION_EDITOR")
-        or os.environ.get("EDITOR")
-        or os.environ.get("VISUAL")
-    )
+    editor = os.environ.get("CLAWTION_EDITOR") or os.environ.get("EDITOR") or os.environ.get("VISUAL")
     if editor:
         return editor
     if sys.platform == "win32":
@@ -72,13 +68,9 @@ def _print_config(cfg: dict[str, Any], indent: int = 0) -> None:
             click.echo(f"{prefix}{click.style(key + ':', bold=True)}")
             _print_config(value, indent + 4)
         elif isinstance(value, bool):
-            click.echo(
-                f"{prefix}{key}: {click.style(str(value).lower(), fg='cyan')}"
-            )
+            click.echo(f"{prefix}{key}: {click.style(str(value).lower(), fg='cyan')}")
         elif isinstance(value, (int, float)):
-            click.echo(
-                f"{prefix}{key}: {click.style(str(value), fg='yellow')}"
-            )
+            click.echo(f"{prefix}{key}: {click.style(str(value), fg='yellow')}")
         elif value is None:
             click.echo(f"{prefix}{key}: null")
         else:
@@ -94,6 +86,7 @@ async def edit() -> None:
     # Create default config if not exists
     if not _GLOBAL_CONFIG_PATH.exists():
         from clawtion.config.defaults import DEFAULT_CONFIG
+
         with _GLOBAL_CONFIG_PATH.open("w", encoding="utf-8") as f:
             yaml.dump(DEFAULT_CONFIG, f, default_flow_style=False, allow_unicode=True)
 
@@ -238,11 +231,7 @@ async def toggle_multi_resolution() -> None:
     fallback behaviour applies.
     """
     cfg = get_config()
-    current: bool = bool(
-        cfg.get("chunking", {})
-        .get("multi_resolution", {})
-        .get("enabled", True)
-    )
+    current: bool = bool(cfg.get("chunking", {}).get("multi_resolution", {}).get("enabled", True))
     new_value = not current
 
     _update_nested_bool("chunking.multi_resolution.enabled", new_value)
@@ -268,9 +257,7 @@ async def enable_level(level: str) -> None:
     config_key = f"chunking.levels.{level}.enabled"
     _update_nested_bool(config_key, True)
 
-    click.echo(
-        click.style(f"  Level '{level}' enabled.", fg="green")
-    )
+    click.echo(click.style(f"  Level '{level}' enabled.", fg="green"))
 
 
 @config_cmd.command(name="disable-level")
@@ -285,6 +272,4 @@ async def disable_level(level: str) -> None:
     config_key = f"chunking.levels.{level}.enabled"
     _update_nested_bool(config_key, False)
 
-    click.echo(
-        click.style(f"  Level '{level}' disabled.", fg="yellow")
-    )
+    click.echo(click.style(f"  Level '{level}' disabled.", fg="yellow"))

@@ -1,7 +1,5 @@
 """Unit tests for configuration loader."""
 
-
-
 from clawtion.config.defaults import DEFAULT_CONFIG
 from clawtion.config.loader import _deep_merge, get_config, reload_config
 

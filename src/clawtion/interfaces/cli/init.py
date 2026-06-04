@@ -67,6 +67,7 @@ def _start_docker_compose(project_dir: str | Path) -> bool:
                 click.echo(click.style(f"  {t('cli.init.db_started')}", fg="green"))
                 return True
             import time
+
             time.sleep(2)
 
         click.echo(click.style("  Database health check timed out.", fg="yellow"))
@@ -277,9 +278,7 @@ async def init(
     # 1. Vault path
     resolved_vault = vault_path
     if not resolved_vault:
-        click.echo(
-            click.style(f"  {t('cli.init.vault_default', path=DEFAULT_VAULT)}", fg="bright_black")
-        )
+        click.echo(click.style(f"  {t('cli.init.vault_default', path=DEFAULT_VAULT)}", fg="bright_black"))
         resolved_vault = click.prompt(
             click.style(f"  {t('cli.init.vault_prompt')}", bold=True),
             default=DEFAULT_VAULT,

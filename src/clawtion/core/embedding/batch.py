@@ -48,6 +48,7 @@ class BatchConfig:
                          processing sub-batches.
                          Default: 5.
     """
+
     threshold: int = 100
     max_wait_hours: int = 24
     batch_size: int = _DEFAULT_BATCH_SIZE
@@ -141,8 +142,7 @@ class BatchEmbeddingClient:
 
         # Large batch — split and run concurrently.
         logger.info(
-            "Large batch requested: %d texts (threshold=%d). "
-            "Splitting into sub-batches of %d.",
+            "Large batch requested: %d texts (threshold=%d). Splitting into sub-batches of %d.",
             len(contents),
             self._config.threshold,
             self._config.batch_size,
@@ -170,7 +170,7 @@ class BatchEmbeddingClient:
     def _split_batches(self, contents: list[str]) -> list[list[str]]:
         """Split *contents* into sub-batches of ``config.batch_size``."""
         batch_size = self._config.batch_size
-        return [contents[i:i + batch_size] for i in range(0, len(contents), batch_size)]
+        return [contents[i : i + batch_size] for i in range(0, len(contents), batch_size)]
 
     async def _process_batches_concurrently(
         self,

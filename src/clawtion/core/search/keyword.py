@@ -362,14 +362,16 @@ class KeywordSearch:
         results: list[dict[str, Any]] = []
         for i, row in enumerate(rows):
             rank = start_rank + i
-            results.append({
-                "chunk_id": row["chunk_id"],
-                "document_id": row["document_id"],
-                "chunk_level": row["chunk_level"],
-                "rank_keyword": rank,
-                "rrf_score_keyword": 1.0 / (self.RRF_K + rank),
-                "keyword_score": float(row["keyword_score"]),
-            })
+            results.append(
+                {
+                    "chunk_id": row["chunk_id"],
+                    "document_id": row["document_id"],
+                    "chunk_level": row["chunk_level"],
+                    "rank_keyword": rank,
+                    "rrf_score_keyword": 1.0 / (self.RRF_K + rank),
+                    "keyword_score": float(row["keyword_score"]),
+                }
+            )
         return results
 
     def _row_to_result(self, row: Any) -> dict[str, Any]:
@@ -407,13 +409,9 @@ class KeywordSearch:
 
         suggestions: list[str] = []
         if count == 0:
-            suggestions.append(
-                "No keyword matches. Try semantic_search for meaning-based search or check spelling."
-            )
+            suggestions.append("No keyword matches. Try semantic_search for meaning-based search or check spelling.")
         elif avg_score < 0.1:
-            suggestions.append(
-                "Low keyword relevance. Try semantic_search for broader meaning matching."
-            )
+            suggestions.append("Low keyword relevance. Try semantic_search for broader meaning matching.")
         elif avg_score > 0.5:
             suggestions.append(
                 f"Strong keyword matches (avg {avg_score:.2f}). Results likely contain exact query terms."
@@ -425,9 +423,7 @@ class KeywordSearch:
             doc_ids = [r["document_id"] for r in results]
             multi_hit_docs = {doc_id: cnt for doc_id, cnt in Counter(doc_ids).items() if cnt >= 3}
             if multi_hit_docs:
-                suggestions.append(
-                    "Multiple hits from same file. Consider get_file_chunks for full context."
-                )
+                suggestions.append("Multiple hits from same file. Consider get_file_chunks for full context.")
 
         return {
             "tool": "keyword_search",

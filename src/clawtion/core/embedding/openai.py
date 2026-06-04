@@ -231,8 +231,7 @@ class OpenAIEmbeddingClient:
             self._client = AsyncOpenAI(api_key=self._api_key)
         except ImportError:
             raise EmbeddingError(
-                "openai package is not installed. "
-                "Run: pip install openai>=1.0.0",
+                "openai package is not installed. Run: pip install openai>=1.0.0",
             ) from None
 
     def _is_dimensions_supported(self) -> bool:
@@ -386,7 +385,6 @@ class OpenAIEmbeddingClient:
 
         if len(results) != len(contents):
             raise EmbeddingError(
-                f"Batch embedding returned {len(results)} results for "
-                f"{len(contents)} inputs.",
+                f"Batch embedding returned {len(results)} results for {len(contents)} inputs.",
             )
         return results

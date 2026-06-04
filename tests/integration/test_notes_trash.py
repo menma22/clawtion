@@ -1,6 +1,5 @@
 """Integration tests for Note and Trash services."""
 
-
 import pytest
 
 
@@ -42,9 +41,7 @@ class TestNoteServiceIntegration:
         indexing_service = AsyncMock()
         service = NoteService(db_manager, vault_path, indexing_service)
 
-        created = await service.create(
-            title="Get Test", content="Content here", folder=""
-        )
+        created = await service.create(title="Get Test", content="Content here", folder="")
 
         retrieved = await service.get(created["document_id"])
         assert retrieved["title"] == "Get Test"
@@ -59,9 +56,7 @@ class TestNoteServiceIntegration:
         indexing_service = AsyncMock()
         service = NoteService(db_manager, vault_path, indexing_service)
 
-        created = await service.create(
-            title="Update Test", content="Original", folder=""
-        )
+        created = await service.create(title="Update Test", content="Original", folder="")
         updated = await service.update(created["document_id"], content="Updated content")
         assert updated.get("title") or updated.get("document_id")  # update returns info dict
 

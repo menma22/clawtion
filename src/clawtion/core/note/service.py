@@ -130,9 +130,7 @@ class NoteService:
         )
 
         # 自動 indexing をトリガー
-        _has_indexing = self._indexing is not None
-        print(f"[CREATE DEBUG] _indexing is not None: {_has_indexing}", flush=True)
-        if _has_indexing:
+        if self._indexing is not None:
             print(f"[CREATE DEBUG] calling index_file for: {abs_path}", flush=True)
             try:
                 await self._indexing.index_file(abs_path)

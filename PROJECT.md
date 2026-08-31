@@ -176,7 +176,7 @@ clawtionのデータは **5つの場所** に分散しています。これは�
 ### 4.1 全体マップ
 
 ```
-このPC (C:\Users\mahim\)
+このPC (%USERPROFILE%\)
 │
 ├── 📁 .claude\実行場\clawtion\          ← 【Git管理】プロジェクト本体
 │   ├── docker-compose.yml               ← Dockerコンテナ定義
@@ -581,7 +581,7 @@ clawtion/
 ### 7.2 プロジェクト外の関連ファイル・ディレクトリ
 
 ```
-C:\Users\mahim\
+%USERPROFILE%\
 │
 ├── 📁 Documents\clawtion-vault\     ← 【Vault】ノートファイル保存先
 │   ├── *.md                          ← ユーザーが作成したノート
